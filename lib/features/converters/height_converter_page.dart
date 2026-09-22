@@ -1,0 +1,198 @@
+import 'package:flutter/material.dart';
+
+import '../../core/theme/app_palette.dart';
+import '../../core/utils/formatting.dart';
+import '../../core/widgets/section_card.dart';
+
+/// Feet + inches ↔ centimetres, the way people actually quote height.
+class HeightConverterPage extends StatefulWidget {
+  const HeightConverterPage({super.key});
+
+  @override
+  State<HeightConverterPage> createState() => _HeightConverterPageState();
+}
+
+class _HeightConverterPageState extends State<HeightConverterPage> {
+  final TextEditingController _feet = TextEditingController(text: '5');
+  final TextEditingController _inches = TextEditingController(text: '9');
+  final TextEditingController _cm = TextEditingController(text: '175.3');
+
+  bool _updating = false;
+
+  @override
+  void dispose() {
+    _feet.dispose();
+    _inches.dispose();
+    _cm.dispose();
+    super.dispose();
+  }
+
+  void _fromImperial() {
+    if (_updating) return;
+    _updating = true;
+    final double feet = Fmt.parse(_feet.text) ?? 0;
+    final double inches = Fmt.parse(_inches.text) ?? 0;
+    final double cm = (feet * 12 + inches) * 2.54;
+    _cm.text = cm.toStringAsFixed(1);
+    _updating = false;
+    setState(() {});
+  }
+
+  void _fromMetric() {
+    if (_updating) return;
+    _updating = true;
+    final double cm = Fmt.parse(_cm.text) ?? 0;
+    final double totalInches = cm / 2.54;
+    final int feet = totalInches ~/ 12;
+    final double inches = totalInches - feet * 12;
+    _feet.text = '$feet';
+    _inches.text = inches.toStringAsFixed(1);
+    _updating = false;
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppPalette p = context.palette;
+    final double cm = Fmt.parse(_cm.text) ?? 0;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('HEIGHT CONVERTER')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
+        children: <Widget>[
+          SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const FieldLabel('Feet & inches', width: 160),
+                const SizedBox(height: 10),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: TextField(
+                        controller: _feet,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => _fromImperial(),
+                        decoration: const InputDecoration(
+                          labelText: 'Feet',
+                          suffixText: 'ft',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _inches,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        onChanged: (_) => _fromImperial(),
+                        decoration: const InputDecoration(
+                          labelText: 'Inches',
+                          suffixText: 'in',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const FieldLabel('Metric', width: 160),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _cm,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  onChanged: (_) => _fromMetric(),
+                  decoration: const InputDecoration(
+                    labelText: 'Centimetres',
+                    suffixText: 'cm',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SectionCard(
+            color: p.primary.withOpacity(0.12),
+            borderColor: p.primary.withOpacity(0.5),
+            child: Column(
+              children: <Widget>[
+                _row(p, 'Metres', '${Fmt.smart(cm / 100, maxDecimals: 3)} m'),
+                const SizedBox(height: 8),
+                _row(p, 'Millimetres', '${Fmt.smart(cm * 10)} mm'),
+                const SizedBox(height: 8),
+                _row(p, 'Total inches',
+                    '${Fmt.smart(cm / 2.54, maxDecimals: 2)} in'),
+                const SizedBox(height: 8),
+                _row(p, 'Hands (horses)',
+                    '${Fmt.smart(cm / 10.16, maxDecimals: 2)} hh'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SectionLabel('Quick reference'),
+          SectionCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: <int>[150, 155, 160, 165, 170, 175, 180, 185, 190, 195]
+                  .map((int value) {
+                final double inches = value / 2.54;
+                final int ft = inches ~/ 12;
+                final double inch = inches - ft * 12;
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 9),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: p.outline.withOpacity(0.5)),
+                    ),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Text('$value cm',
+                          style: TextStyle(
+                              fontSize: 12.5, color: p.textSecondary)),
+                      const Spacer(),
+                      Text(
+                        "$ft' ${inch.toStringAsFixed(1)}\"",
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: p.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(AppPalette p, String label, String value) {
+    return Row(
+      children: <Widget>[
+        Text(label, style: TextStyle(fontSize: 12.5, color: p.textSecondary)),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: p.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+}
