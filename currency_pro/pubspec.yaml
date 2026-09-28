@@ -1,0 +1,35 @@
+name: currency_pro
+description: >-
+  CurrencyPro — real-time currency converter with Bitcoin, gold and silver,
+  plus a full suite of unit converters and everyday calculators.
+publish_to: "none"
+version: 1.6.0+168
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  provider: ^6.1.2
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+  intl: ^0.20.3
+  share_plus: ^10.1.4
+  google_mobile_ads: ^9.1.0
+  permission_handler: ^11.4.0
+  flutter_local_notifications: ^19.4.0
+  audioplayers: ^6.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/sounds/key_click.wav
+    - assets/icon/app_icon.png

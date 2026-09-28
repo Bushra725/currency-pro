@@ -1,0 +1,7 @@
+# Play artifacts and local tooling
+publish/
+tools/
+*.zip
+
+# Alternate / extracted trees (not the shipping app)
+currency_pro_ui_refresh/
