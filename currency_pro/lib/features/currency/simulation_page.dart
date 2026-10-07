@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/widgets/app_drawer.dart';
@@ -45,6 +46,7 @@ class _SimulationPageState extends State<SimulationPage> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
 
@@ -62,7 +64,7 @@ class _SimulationPageState extends State<SimulationPage> {
 
     return Scaffold(
       drawer: const AppDrawer(current: Routes.simulation),
-      appBar: RateAppBar(title: 'Currency Simulation'),
+      appBar: RateAppBar(title: l10n.simulation),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
@@ -87,7 +89,7 @@ class _SimulationPageState extends State<SimulationPage> {
           SectionCard(
             child: Row(
               children: <Widget>[
-                const FieldLabel('Amount', width: 84),
+                FieldLabel(l10n.amountLabel, width: 84),
                 Expanded(
                   child: TextField(
                     controller: _amount,
@@ -120,7 +122,7 @@ class _SimulationPageState extends State<SimulationPage> {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Rate change', width: 104),
+                    FieldLabel(l10n.rateChange, width: 104),
                     const Spacer(),
                     Text(
                       Fmt.percent(_shiftPercent, decimals: 2),
@@ -147,7 +149,7 @@ class _SimulationPageState extends State<SimulationPage> {
                             fontSize: 11, color: p.textSecondary)),
                     TextButton(
                       onPressed: () => setState(() => _shiftPercent = 0),
-                      child: const Text('RESET'),
+                      child: Text(l10n.reset),
                     ),
                     Text('+25%',
                         style: TextStyle(
@@ -163,12 +165,12 @@ class _SimulationPageState extends State<SimulationPage> {
             borderColor: p.primary.withOpacity(0.5),
             child: Column(
               children: <Widget>[
-                _resultRow(p, 'Live rate',
+                _resultRow(p, l10n.liveRate,
                     liveRate == null ? '—' : Fmt.smart(liveRate, maxDecimals: 6)),
                 const SizedBox(height: 8),
                 _resultRow(
                   p,
-                  'Simulated rate',
+                  l10n.simulatedRate,
                   simulatedRate == null
                       ? '—'
                       : Fmt.smart(simulatedRate, maxDecimals: 6),
@@ -177,7 +179,7 @@ class _SimulationPageState extends State<SimulationPage> {
                 Divider(height: 22, color: p.outline),
                 _resultRow(
                   p,
-                  'You get now',
+                  l10n.youGetNow,
                   liveValue == null
                       ? '—'
                       : '${settings.format(liveValue)} $_to',
@@ -185,7 +187,7 @@ class _SimulationPageState extends State<SimulationPage> {
                 const SizedBox(height: 8),
                 _resultRow(
                   p,
-                  'You would get',
+                  l10n.youWouldGet,
                   simulatedValue == null
                       ? '—'
                       : '${settings.format(simulatedValue)} $_to',
@@ -194,7 +196,7 @@ class _SimulationPageState extends State<SimulationPage> {
                 const SizedBox(height: 8),
                 _resultRow(
                   p,
-                  'Difference',
+                  l10n.difference,
                   difference == null
                       ? '—'
                       : '${difference >= 0 ? '+' : ''}'
@@ -207,7 +209,7 @@ class _SimulationPageState extends State<SimulationPage> {
             ),
           ),
           const SizedBox(height: 14),
-          SectionLabel('Scenario table'),
+          SectionLabel(l10n.scenarioTable),
           SectionCard(
             padding: EdgeInsets.zero,
             child: Column(
