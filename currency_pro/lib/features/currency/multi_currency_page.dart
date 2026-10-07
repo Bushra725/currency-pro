@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
+import '../../core/widgets/app_dropdown.dart';
 import '../../core/utils/expression_parser.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/utils/haptics.dart';
@@ -86,13 +88,14 @@ class _MultiCurrencyPageState extends State<MultiCurrencyPage> {
     await Clipboard.setData(ClipboardData(text: buffer.toString()));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('All conversions copied')),
+      SnackBar(content: Text(L10n.read(context).allCopied)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
     final List<String> codes = settings.activeMultiSet;
@@ -103,34 +106,28 @@ class _MultiCurrencyPageState extends State<MultiCurrencyPage> {
     return Scaffold(
       drawer: const AppDrawer(current: Routes.multi),
       appBar: RateAppBar(
-        title: 'Multi Currency Converter',
+        title: l10n.multiCurrency,
         actions: <Widget>[
-          PopupMenuButton<int>(
-            tooltip: 'Number of currencies',
-            icon: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(Icons.filter_none, size: 17, color: p.textSecondary),
-                const SizedBox(width: 3),
-                Text(
-                  '${settings.multiCount}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: p.primary,
-                  ),
-                ),
-              ],
+          Tooltip(
+            message: l10n.currencyCountTip,
+            child: AppDropdown<int>(
+              value: settings.multiCount,
+              background: Colors.transparent,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              entries: <int>[2, 4, 8]
+                  .map(
+                    (int n) => AppDropdownEntry<int>(
+                      value: n,
+                      label: l10n.currencyCount('$n'),
+                      icon: Icons.flag_outlined,
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (int value) {
+                settings.setMultiCount(value);
+                setState(() => _activeIndex = 0);
+              },
             ),
-            onSelected: (int value) {
-              settings.setMultiCount(value);
-              setState(() => _activeIndex = 0);
-            },
-            itemBuilder: (_) => const <PopupMenuEntry<int>>[
-              PopupMenuItem<int>(value: 2, child: Text('2 currencies')),
-              PopupMenuItem<int>(value: 4, child: Text('4 currencies')),
-              PopupMenuItem<int>(value: 8, child: Text('8 currencies')),
-            ],
           ),
         ],
       ),
@@ -173,7 +170,7 @@ class _MultiCurrencyPageState extends State<MultiCurrencyPage> {
                   onTapCurrency: () async {
                     final Currency? picked = await CurrencyPicker.show(
                       context,
-                      title: 'Replace ${c.code}',
+                      title: L10n.read(context).replaceCurrency(c.code),
                     );
                     if (picked == null) return;
                     final int realIndex =
