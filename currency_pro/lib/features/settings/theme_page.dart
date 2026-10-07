@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/theme/theme_catalog.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 import '../../state/settings_provider.dart';
 
@@ -25,7 +26,7 @@ class _ThemePageState extends State<ThemePage> {
     final AppPalette preview = ThemeCatalog.byId(_selected);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.selectTheme.toUpperCase())),
+      appBar: AppBar(title: ScreenTitle(l10n.selectTheme.toUpperCase())),
       body: Column(
         children: <Widget>[
           Padding(
