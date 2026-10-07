@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 
 /// Body mass index with metric and imperial entry.
@@ -23,34 +25,35 @@ class _BmiCalculatorPageState extends State<BmiCalculatorPage> {
     return _weightKg / (m * m);
   }
 
-  ({String label, Color color}) _category(AppPalette p, double bmi) {
-    if (bmi < 18.5) return (label: 'Underweight', color: p.accent);
-    if (bmi < 25) return (label: 'Healthy weight', color: p.up);
-    if (bmi < 30) return (label: 'Overweight', color: p.primary);
-    if (bmi < 35) return (label: 'Obesity class I', color: p.down);
-    if (bmi < 40) return (label: 'Obesity class II', color: p.down);
-    return (label: 'Obesity class III', color: p.down);
+  ({String label, Color color}) _category(AppPalette p, L10n l10n, double bmi) {
+    if (bmi < 18.5) return (label: l10n.bmiUnder, color: p.accent);
+    if (bmi < 25) return (label: l10n.bmiHealthy, color: p.up);
+    if (bmi < 30) return (label: l10n.bmiOver, color: p.primary);
+    if (bmi < 35) return (label: l10n.bmiObese1, color: p.down);
+    if (bmi < 40) return (label: l10n.bmiObese2, color: p.down);
+    return (label: l10n.bmiObese3, color: p.down);
   }
 
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final double bmi = _bmi;
-    final ({String label, Color color}) category = _category(p, bmi);
+    final ({String label, Color color}) category = _category(p, l10n, bmi);
 
     final double m = _heightCm / 100;
     final double healthyMin = 18.5 * m * m;
     final double healthyMax = 24.9 * m * m;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('BMI CALCULATOR')),
+      appBar: AppBar(title: ScreenTitle(l10n.bmiCalculator)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
           SegmentedButton<bool>(
-            segments: const <ButtonSegment<bool>>[
-              ButtonSegment<bool>(value: true, label: Text('Metric')),
-              ButtonSegment<bool>(value: false, label: Text('Imperial')),
+            segments: <ButtonSegment<bool>>[
+              ButtonSegment<bool>(value: true, label: Text(l10n.metric)),
+              ButtonSegment<bool>(value: false, label: Text(l10n.imperial)),
             ],
             selected: <bool>{_metric},
             onSelectionChanged: (Set<bool> value) =>
@@ -63,7 +66,7 @@ class _BmiCalculatorPageState extends State<BmiCalculatorPage> {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Height', width: 90),
+                    FieldLabel(l10n.height, width: 90),
                     const Spacer(),
                     Text(
                       _metric
@@ -87,7 +90,7 @@ class _BmiCalculatorPageState extends State<BmiCalculatorPage> {
                 const SizedBox(height: 6),
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Weight', width: 90),
+                    FieldLabel(l10n.weight, width: 90),
                     const Spacer(),
                     Text(
                       _metric
@@ -137,11 +140,17 @@ class _BmiCalculatorPageState extends State<BmiCalculatorPage> {
                 _scale(p, bmi),
                 const SizedBox(height: 12),
                 Text(
-                  'Healthy range for your height: '
-                  '${Fmt.smart(_metric ? healthyMin : healthyMin * 2.20462, maxDecimals: 1)}'
-                  ' – '
-                  '${Fmt.smart(_metric ? healthyMax : healthyMax * 2.20462, maxDecimals: 1)}'
-                  ' ${_metric ? 'kg' : 'lb'}',
+                  l10n.healthyRange(
+                    Fmt.smart(
+                      _metric ? healthyMin : healthyMin * 2.20462,
+                      maxDecimals: 1,
+                    ),
+                    Fmt.smart(
+                      _metric ? healthyMax : healthyMax * 2.20462,
+                      maxDecimals: 1,
+                    ),
+                    _metric ? 'kg' : 'lb',
+                  ),
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: p.textSecondary),
                 ),
@@ -149,17 +158,17 @@ class _BmiCalculatorPageState extends State<BmiCalculatorPage> {
             ),
           ),
           const SizedBox(height: 12),
-          SectionLabel('Categories (WHO)'),
+          SectionLabel(l10n.bmiCategories),
           SectionCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: <List<String>>[
-                <String>['Under 18.5', 'Underweight'],
-                <String>['18.5 – 24.9', 'Healthy weight'],
-                <String>['25.0 – 29.9', 'Overweight'],
-                <String>['30.0 – 34.9', 'Obesity class I'],
-                <String>['35.0 – 39.9', 'Obesity class II'],
-                <String>['40.0 and above', 'Obesity class III'],
+                <String>[l10n.underBmi('18.5'), l10n.bmiUnder],
+                <String>['18.5 – 24.9', l10n.bmiHealthy],
+                <String>['25.0 – 29.9', l10n.bmiOver],
+                <String>['30.0 – 34.9', l10n.bmiObese1],
+                <String>['35.0 – 39.9', l10n.bmiObese2],
+                <String>[l10n.bmiAndAbove('40.0'), l10n.bmiObese3],
               ].map((List<String> row) {
                 return Container(
                   padding: const EdgeInsets.symmetric(
@@ -203,10 +212,7 @@ class _BmiCalculatorPageState extends State<BmiCalculatorPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'BMI is a rough screening tool. It does not distinguish '
-                    'muscle from fat, and it reads differently for children, '
-                    'athletes and older adults. Ask a clinician before acting '
-                    'on it.',
+                    l10n.bmiDisclaimer,
                     style:
                         TextStyle(fontSize: 11, color: p.textSecondary),
                   ),
