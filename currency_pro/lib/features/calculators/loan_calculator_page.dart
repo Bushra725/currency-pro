@@ -1,8 +1,10 @@
+import '../../core/widgets/screen_title.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/widgets/section_card.dart';
@@ -51,6 +53,7 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final Currency currency = CurrencyLookup.of(_code);
 
@@ -62,7 +65,7 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
         totalPaid <= 0 ? 0 : interest / totalPaid * 100;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('LOAN / EMI CALCULATOR')),
+      appBar: AppBar(title: ScreenTitle(l10n.loanCalculator)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
@@ -72,7 +75,7 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Loan amount', width: 112),
+                    FieldLabel(l10n.loanAmount, width: 112),
                     Expanded(
                       child: TextField(
                         controller: _amount,
@@ -115,7 +118,7 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
                 const SizedBox(height: 14),
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Interest / year', width: 112),
+                    FieldLabel(l10n.interestYear, width: 112),
                     const Spacer(),
                     Text(
                       '${_ratePercent.toStringAsFixed(2)} %',
@@ -135,12 +138,12 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
                 ),
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Term', width: 112),
+                    FieldLabel(l10n.term, width: 112),
                     const Spacer(),
                     Text(
                       _months % 12 == 0
-                          ? '${_months ~/ 12} yr'
-                          : '$_months mo',
+                          ? l10n.termYears('${_months ~/ 12}')
+                          : l10n.termMonths('$_months'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -161,7 +164,7 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
                   spacing: 6,
                   children: <int>[12, 24, 36, 60, 120, 180, 240, 360]
                       .map((int m) => ChoiceChip(
-                            label: Text('${m ~/ 12}y'),
+                            label: Text(l10n.termYearsChip('${m ~/ 12}')),
                             selected: _months == m,
                             showCheckmark: false,
                             onSelected: (_) =>
@@ -184,7 +187,7 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
             borderColor: p.primary.withOpacity(0.5),
             child: Column(
               children: <Widget>[
-                Text('Monthly payment',
+                Text(l10n.monthlyPayment,
                     style:
                         TextStyle(fontSize: 12, color: p.textSecondary)),
                 const SizedBox(height: 4),
@@ -197,14 +200,14 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
                   ),
                 ),
                 Divider(height: 22, color: p.outline),
-                _row(p, 'Principal',
+                _row(p, l10n.principal,
                     '${settings.format(principal)} ${currency.code}'),
                 const SizedBox(height: 8),
-                _row(p, 'Total interest',
+                _row(p, l10n.totalInterest,
                     '${settings.format(interest)} ${currency.code}',
                     color: p.down),
                 const SizedBox(height: 8),
-                _row(p, 'Total repayment',
+                _row(p, l10n.totalRepayment,
                     '${settings.format(totalPaid)} ${currency.code}'),
                 const SizedBox(height: 12),
                 ClipRRect(
@@ -218,18 +221,19 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Interest is ${interestShare.toStringAsFixed(1)} % of '
-                  'everything you repay',
+                  l10n.interestShareOf(interestShare.toStringAsFixed(1)),
                   style: TextStyle(fontSize: 11, color: p.textSecondary),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 14),
-          SectionLabel('Yearly breakdown'),
+          SectionLabel(l10n.yearlyBreakdown),
           SectionCard(
             padding: EdgeInsets.zero,
-            child: Column(children: _schedule(p, settings, principal, emi)),
+            child: Column(
+              children: _schedule(p, l10n, settings, principal, emi),
+            ),
           ),
         ],
       ),
@@ -238,6 +242,7 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
 
   List<Widget> _schedule(
     AppPalette p,
+    L10n l10n,
     SettingsProvider settings,
     double principal,
     double emi,
@@ -252,18 +257,18 @@ class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
           children: <Widget>[
             SizedBox(
               width: 42,
-              child: Text('Year', style: _head(p)),
+              child: Text(l10n.yearCol, style: _head(p)),
             ),
             Expanded(
-              child: Text('Interest',
+              child: Text(l10n.interestCol,
                   textAlign: TextAlign.right, style: _head(p)),
             ),
             Expanded(
-              child: Text('Principal',
+              child: Text(l10n.principal,
                   textAlign: TextAlign.right, style: _head(p)),
             ),
             Expanded(
-              child: Text('Balance',
+              child: Text(l10n.balanceCol,
                   textAlign: TextAlign.right, style: _head(p)),
             ),
           ],
