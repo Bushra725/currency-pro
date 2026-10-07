@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/widgets/app_drawer.dart';
@@ -31,7 +32,7 @@ class _TrendChartPageState extends State<TrendChartPage> {
   List<RatePoint> _points = <RatePoint>[];
   ChartRange _range = ChartRange.all[3]; // 6M
   bool _loading = false;
-  String? _error;
+  _ChartError? _error;
   String _from = 'USD';
   String _to = 'GBP';
 
@@ -63,17 +64,21 @@ class _TrendChartPageState extends State<TrendChartPage> {
         _points = points;
         _loading = false;
         if (points.isEmpty) {
+          // An empty series means either a pair the provider does not chart,
+          // or a request that came back with nothing. Neither is the user's
+          // problem to debug, so both get a plain-language message.
           _error = _api.supports(_from, _to)
-              ? 'The provider returned no data for this window.'
-              : 'Daily history is published for major currencies, metals and '
-                  'crypto only. $_from/$_to is not in that set.';
+              ? _ChartError.network
+              : _ChartError.unsupportedPair;
         }
       });
-    } catch (e) {
+    } catch (e, stack) {
+      // Keep the technical detail in the debug console only — never on screen.
+      debugPrint('Trend chart load failed for $_from/$_to: $e\n$stack');
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Could not load history: $e';
+        _error = _ChartError.network;
       });
     }
   }
@@ -81,7 +86,9 @@ class _TrendChartPageState extends State<TrendChartPage> {
   Future<void> _pick({required bool isFrom}) async {
     final Currency? picked = await CurrencyPicker.show(
       context,
-      title: isFrom ? 'Chart base' : 'Chart target',
+      title: isFrom
+          ? L10n.read(context).chartBase
+          : L10n.read(context).chartTarget,
     );
     if (picked == null) return;
     setState(() {
@@ -97,6 +104,7 @@ class _TrendChartPageState extends State<TrendChartPage> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final RatesProvider rates = context.watch<RatesProvider>();
 
     final double? live = rates.pairRate(_from, _to);
@@ -109,11 +117,11 @@ class _TrendChartPageState extends State<TrendChartPage> {
     return Scaffold(
       drawer: const AppDrawer(current: Routes.charts),
       appBar: RateAppBar(
-        title: 'Trend Charts',
+        title: l10n.trendCharts,
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.swap_horiz, size: 20),
-            tooltip: 'Swap pair',
+            tooltip: l10n.swapPair,
             onPressed: () {
               setState(() {
                 final String old = _from;
@@ -190,13 +198,43 @@ class _TrendChartPageState extends State<TrendChartPage> {
                     child: Center(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: p.textSecondary,
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(
+                              _error == _ChartError.network
+                                  ? Icons.wifi_off_rounded
+                                  : Icons.show_chart_rounded,
+                              size: 34,
+                              color: p.textSecondary.withOpacity(0.7),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _error == _ChartError.network
+                                  ? l10n.chartLoadFailed
+                                  : l10n.chartNoHistory,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                height: 1.45,
+                                color: p.textSecondary,
+                              ),
+                            ),
+                            if (_error == _ChartError.network) ...<Widget>[
+                              const SizedBox(height: 14),
+                              FilledButton.icon(
+                                onPressed: _load,
+                                icon: const Icon(Icons.refresh_rounded,
+                                    size: 17),
+                                label: Text(l10n.retry),
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size(0, 40),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 18),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ),
@@ -300,6 +338,7 @@ class _TrendChartPageState extends State<TrendChartPage> {
   }
 
   Widget _table(AppPalette p) {
+    final L10n l10n = L10n.of(context);
     final List<RatePoint> rows = _points.reversed.take(14).toList();
 
     return SectionCard(
@@ -317,16 +356,16 @@ class _TrendChartPageState extends State<TrendChartPage> {
               children: <Widget>[
                 Expanded(
                   flex: 3,
-                  child: Text('Date', style: _head(p)),
+                  child: Text(l10n.colDate, style: _head(p)),
                 ),
                 Expanded(
                   flex: 3,
-                  child: Text('Exchange rate',
+                  child: Text(l10n.colRate,
                       textAlign: TextAlign.right, style: _head(p)),
                 ),
                 Expanded(
                   flex: 3,
-                  child: Text('Inc./Dec. ratio',
+                  child: Text(l10n.colChange,
                       textAlign: TextAlign.right, style: _head(p)),
                 ),
               ],
@@ -397,3 +436,7 @@ class _TrendChartPageState extends State<TrendChartPage> {
         color: p.textSecondary,
       );
 }
+
+/// Why the chart has nothing to draw. Kept separate from the message text so
+/// the wording stays translatable and no exception detail can reach the UI.
+enum _ChartError { network, unsupportedPair }
