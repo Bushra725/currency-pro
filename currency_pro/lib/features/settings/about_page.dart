@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_config.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/utils/links.dart';
 import '../../core/widgets/app_drawer.dart';
 import '../../core/widgets/brand_logo.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 import '../../data/currency_catalog.dart';
 import '../../routes.dart';
@@ -21,6 +24,7 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final RatesProvider rates = context.watch<RatesProvider>();
 
     final int unitCount = kUnitCategories.fold<int>(
@@ -30,7 +34,7 @@ class AboutPage extends StatelessWidget {
 
     return Scaffold(
       drawer: const AppDrawer(current: Routes.about),
-      appBar: AppBar(title: const Text('ABOUT APP')),
+      appBar: AppBar(title: ScreenTitle(l10n.aboutApp)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
@@ -48,13 +52,12 @@ class AboutPage extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Version ${AppConfig.appVersion}',
+                  l10n.versionLabel(AppConfig.appVersion),
                   style: TextStyle(fontSize: 12, color: p.textSecondary),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Real-time currency conversion with Bitcoin, gold and '
-                  'silver — plus every everyday calculator in one app.',
+                  l10n.aboutTagline,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12.5, color: p.textSecondary),
                 ),
@@ -65,90 +68,89 @@ class AboutPage extends StatelessWidget {
           Row(
             children: <Widget>[
               Expanded(
-                child: _stat(p, '${kAllCurrencies.length}', 'assets'),
+                child: _stat(p, '${kAllCurrencies.length}', l10n.statAssets),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _stat(p, '${kUnitCategories.length}', 'categories'),
+                child: _stat(p, '${kUnitCategories.length}', l10n.statCategories),
               ),
               const SizedBox(width: 10),
-              Expanded(child: _stat(p, '$unitCount', 'units')),
+              Expanded(child: _stat(p, '$unitCount', l10n.statUnits)),
             ],
           ),
           const SizedBox(height: 12),
-          SectionLabel('Where the numbers come from'),
+          SectionLabel(l10n.aboutSources),
           SectionCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _source(
-                  p,
-                  'Fiat exchange rates',
-                  'open.er-api.com — free, no API key, 160+ currencies. '
-                      'The European Central Bank feed (frankfurter.dev) is '
-                      'used automatically if the primary source is down.',
-                ),
+                _source(p, l10n.sourceFiatTitle, l10n.sourceFiatBody),
+                const SizedBox(height: 12),
+                _source(p, l10n.sourceChartsTitle, l10n.sourceChartsBody),
+                const SizedBox(height: 12),
+                _source(p, l10n.sourceMetalsTitle, l10n.sourceMetalsBody),
                 const SizedBox(height: 12),
                 _source(
                   p,
-                  'Historical charts',
-                  'European Central Bank daily reference rates via '
-                      'frankfurter.dev, and CoinGecko for crypto and metals.',
-                ),
-                const SizedBox(height: 12),
-                _source(
-                  p,
-                  'Bitcoin, gold and silver',
-                  'CoinGecko public API. Gold and silver track PAXG and KAG, '
-                      'tokens each redeemable for one troy ounce of the '
-                      'physical metal.',
-                ),
-                const SizedBox(height: 12),
-                _source(
-                  p,
-                  'Status',
+                  l10n.statusLabel,
                   rates.hasData
-                      ? 'Last successful download '
-                          '${Fmt.ago(rates.snapshot.fetchedAt)} from '
-                          '${rates.provider}.'
-                      : 'No successful download yet.',
+                      ? l10n.lastDownload(
+                          Fmt.ago(rates.snapshot.fetchedAt),
+                          rates.provider,
+                        )
+                      : l10n.noDownloadYet,
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          SectionLabel('Good to know'),
+          SectionLabel(l10n.goodToKnow),
           SectionCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _bullet(p,
-                    'Rates are mid-market reference values. Banks, cards and '
-                    'exchanges add their own spread — model it on the '
-                    'Exchange Rate Adjustment screen.'),
-                _bullet(p,
-                    'The last downloaded table is cached, so conversions keep '
-                    'working with no connection.'),
-                _bullet(p,
-                    'Everything you save — favourites, alerts, trips and '
-                    'holdings — stays on this device. Nothing is uploaded.'),
-                _bullet(p,
-                    'This app is a reference tool, not financial advice.'),
+                _bullet(p, l10n.aboutNoteRates),
+                _bullet(p, l10n.aboutNoteCache),
+                _bullet(p, l10n.aboutNoteLocal),
+                _bullet(p, l10n.aboutNoteAdvice),
               ],
             ),
           ),
           const SizedBox(height: 12),
           SectionCard(
+            onTap: () => _sendFeedback(context),
             child: Row(
               children: <Widget>[
                 Icon(Icons.mail_outline, size: 18, color: p.primary),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    'Feedback: ${AppConfig.supportEmail}',
-                    style: TextStyle(fontSize: 12.5, color: p.textPrimary),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        l10n.feedback,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: p.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        AppConfig.supportEmail,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: p.primary,
+                          decoration: TextDecoration.underline,
+                          decorationColor: p.primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                Icon(Icons.open_in_new_rounded,
+                    size: 16, color: p.textSecondary),
               ],
             ),
           ),
@@ -164,7 +166,7 @@ class AboutPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Privacy policy',
+                        l10n.privacyPolicy,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -172,7 +174,7 @@ class AboutPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        AppConfig.privacyPolicyUrl,
+                        l10n.privacyPolicySub,
                         style: TextStyle(
                           fontSize: 11,
                           color: p.textSecondary,
@@ -186,6 +188,31 @@ class AboutPage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Opens the mail app with the support address already filled in.
+  ///
+  /// If the device has no mail client the address is copied instead, so the
+  /// tap always does something useful.
+  Future<void> _sendFeedback(BuildContext context) async {
+    final bool opened = await openEmail(
+      AppConfig.supportEmail,
+      subject:
+          '${AppConfig.appName} v${AppConfig.appVersion} ${L10n.read(context).feedback}',
+    );
+    if (opened || !context.mounted) return;
+
+    await Clipboard.setData(
+      const ClipboardData(text: AppConfig.supportEmail),
+    );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          L10n.read(context).noMailFound(AppConfig.supportEmail),
+        ),
       ),
     );
   }
