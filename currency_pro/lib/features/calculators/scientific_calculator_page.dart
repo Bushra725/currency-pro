@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/expression_parser.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/utils/haptics.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../state/settings_provider.dart';
 
 /// A full scientific calculator with history and degree/radian switching.
@@ -57,28 +59,31 @@ class _ScientificCalculatorPageState extends State<ScientificCalculatorPage> {
         _expression = text.replaceAll(',', '');
         _result = '';
       });
-    } on ExpressionError catch (e) {
-      setState(() => _result = e.message);
-    } catch (_) {
-      setState(() => _result = 'Error');
+    } on ExpressionError catch (e, stack) {
+      debugPrint('Scientific calculator: $e\n$stack');
+      setState(() => _result = _exprErrorText(L10n.read(context), e.message));
+    } catch (e, stack) {
+      debugPrint('Scientific calculator: $e\n$stack');
+      setState(() => _result = L10n.read(context).calcError);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SCIENTIFIC CALCULATOR'),
+        title: ScreenTitle(l10n.scientificCalculator),
         actions: <Widget>[
           IconButton(
-            tooltip: 'History',
+            tooltip: l10n.history,
             icon: const Icon(Icons.history, size: 20),
             onPressed: _showHistory,
           ),
           IconButton(
-            tooltip: 'Copy result',
+            tooltip: l10n.copyResult,
             icon: const Icon(Icons.copy, size: 19),
             onPressed: () async {
               final String text =
@@ -87,7 +92,7 @@ class _ScientificCalculatorPageState extends State<ScientificCalculatorPage> {
               await Clipboard.setData(ClipboardData(text: text));
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Copied')),
+                SnackBar(content: Text(L10n.read(context).copied)),
               );
             },
           ),
@@ -107,7 +112,7 @@ class _ScientificCalculatorPageState extends State<ScientificCalculatorPage> {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    _badge(p, _degrees ? 'DEG' : 'RAD'),
+                    _badge(p, _degrees ? l10n.degMode : l10n.radMode),
                     if (_memory != 0) ...<Widget>[
                       const SizedBox(width: 6),
                       _badge(p, 'M'),
@@ -173,7 +178,7 @@ class _ScientificCalculatorPageState extends State<ScientificCalculatorPage> {
                           _feedback();
                           setState(() => _secondary = !_secondary);
                         }, small: true, active: _secondary),
-                        _key(p, _degrees ? 'DEG' : 'RAD', () {
+                        _key(p, _degrees ? l10n.degMode : l10n.radMode, () {
                           _feedback();
                           setState(() {
                             _degrees = !_degrees;
@@ -445,7 +450,7 @@ class _ScientificCalculatorPageState extends State<ScientificCalculatorPage> {
             height: 220,
             child: Center(
               child: Text(
-                'No calculations yet',
+                L10n.read(context).noCalculations,
                 style: TextStyle(color: p.textSecondary),
               ),
             ),
@@ -477,5 +482,34 @@ class _ScientificCalculatorPageState extends State<ScientificCalculatorPage> {
         );
       },
     );
+  }
+}
+
+String _exprErrorText(L10n l10n, String message) {
+  switch (message) {
+    case 'Not a number':
+      return l10n.exprNotANumber;
+    case 'Division by zero':
+      return l10n.exprDivZero;
+    case 'Unexpected end':
+      return l10n.exprUnexpectedEnd;
+    case 'Missing ")"':
+      return l10n.exprMissingClose;
+    case 'ln needs a positive number':
+      return l10n.exprLnPositive;
+    case 'log needs a positive number':
+      return l10n.exprLogPositive;
+    case '√ of a negative number':
+      return l10n.exprSqrtNegative;
+    case '! needs a whole number ≥ 0':
+      return l10n.exprFactorialWhole;
+    case 'Too large for !':
+      return l10n.exprFactorialLarge;
+    default:
+      if (message.startsWith('Unexpected ')) return l10n.exprUnexpected;
+      if (message.startsWith('Bad number')) return l10n.exprBadNumber;
+      if (message.startsWith('Missing "("')) return l10n.exprMissingOpen;
+      if (message.startsWith('Unknown function')) return l10n.exprUnknownFunction;
+      return l10n.calcError;
   }
 }
