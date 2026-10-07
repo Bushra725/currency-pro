@@ -10,6 +10,8 @@ import '../../core/utils/formatting.dart';
 import '../../core/utils/haptics.dart';
 import '../../core/utils/links.dart';
 import '../../core/widgets/app_drawer.dart';
+import '../../core/widgets/app_dropdown.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 import '../../data/currency_lookup.dart';
 import '../../data/models/currency.dart';
@@ -32,7 +34,7 @@ class SettingsPage extends StatelessWidget {
 
     return Scaffold(
       drawer: const AppDrawer(current: Routes.settings),
-      appBar: AppBar(title: Text(l10n.appSettings.toUpperCase())),
+      appBar: AppBar(title: ScreenTitle(l10n.appSettings.toUpperCase())),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 4, 12, 28),
         children: <Widget>[
@@ -105,52 +107,55 @@ class SettingsPage extends StatelessWidget {
                   leading: Icon(Icons.numbers, color: p.primary),
                   title: Text(l10n.decimalPlaces),
                   subtitle: Text(
-                    'Example: ${settings.format(1234.56789)}',
+                    l10n.exampleValue(settings.format(1234.56789)),
                     style: const TextStyle(fontSize: 11.5),
                   ),
-                  trailing: DropdownButton<int>(
+                  trailing: AppDropdown<int>(
                     value: settings.decimals,
-                    underline: const SizedBox.shrink(),
-                    items: List<DropdownMenuItem<int>>.generate(
+                    entries: List<AppDropdownEntry<int>>.generate(
                       7,
-                      (int i) => DropdownMenuItem<int>(
+                      (int i) => AppDropdownEntry<int>(
                         value: i,
-                        child: Text('$i'),
+                        label: '$i',
                       ),
                     ),
-                    onChanged: (int? v) =>
-                        settings.setDecimals(v ?? 2),
+                    onChanged: settings.setDecimals,
                   ),
                 ),
                 Divider(height: 1, color: p.outline.withOpacity(0.5)),
                 ListTile(
                   leading: Icon(Icons.swap_vert_circle_outlined,
                       color: p.primary),
-                  title: const Text('Rounding mode'),
+                  title: Text(l10n.roundingMode),
                   subtitle: Text(
-                    settings.rounding.label,
+                    _roundingLabel(l10n, settings.rounding),
                     style: const TextStyle(fontSize: 11.5),
                   ),
                   onTap: () async {
                     final RoundingMode? picked =
                         await showModalBottomSheet<RoundingMode>(
                       context: context,
-                      builder: (BuildContext context) => SafeArea(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: RoundingMode.values
-                              .map((RoundingMode m) => ListTile(
-                                    title: Text(m.label),
-                                    trailing: m == settings.rounding
-                                        ? Icon(Icons.check,
-                                            color: p.primary)
-                                        : null,
-                                    onTap: () =>
-                                        Navigator.of(context).pop(m),
-                                  ))
-                              .toList(),
-                        ),
-                      ),
+                      builder: (BuildContext sheetContext) {
+                        final L10n sheetL10n = L10n.read(sheetContext);
+                        return SafeArea(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: RoundingMode.values
+                                .map((RoundingMode m) => ListTile(
+                                      title: Text(
+                                        _roundingLabel(sheetL10n, m),
+                                      ),
+                                      trailing: m == settings.rounding
+                                          ? Icon(Icons.check,
+                                              color: p.primary)
+                                          : null,
+                                      onTap: () =>
+                                          Navigator.of(sheetContext).pop(m),
+                                    ))
+                                .toList(),
+                          ),
+                        );
+                      },
                     );
                     if (picked != null) await settings.setRounding(picked);
                   },
@@ -159,10 +164,10 @@ class SettingsPage extends StatelessWidget {
                 SwitchListTile(
                   secondary: Icon(Icons.format_list_numbered,
                       color: p.primary),
-                  title: const Text('Thousands separator'),
-                  subtitle: const Text(
-                    'Show 1,234,567 instead of 1234567',
-                    style: TextStyle(fontSize: 11.5),
+                  title: Text(l10n.thousandsSeparator),
+                  subtitle: Text(
+                    l10n.thousandsSeparatorSub,
+                    style: const TextStyle(fontSize: 11.5),
                   ),
                   value: settings.grouping,
                   onChanged: settings.setGrouping,
@@ -170,14 +175,14 @@ class SettingsPage extends StatelessWidget {
               ],
             ),
           ),
-          SectionLabel('Keypad'),
+          SectionLabel(l10n.keypad),
           SectionCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: <Widget>[
                 SwitchListTile(
                   secondary: Icon(Icons.vibration, color: p.primary),
-                  title: const Text('Vibrate on key press'),
+                  title: Text(l10n.vibrateOnKey),
                   value: settings.vibrate,
                   onChanged: (bool v) {
                     settings.setVibrate(v);
@@ -187,7 +192,7 @@ class SettingsPage extends StatelessWidget {
                 Divider(height: 1, color: p.outline.withOpacity(0.5)),
                 SwitchListTile(
                   secondary: Icon(Icons.volume_up_outlined, color: p.primary),
-                  title: const Text('Typing sound'),
+                  title: Text(l10n.typingSound),
                   value: settings.keySound,
                   onChanged: (bool v) {
                     settings.setKeySound(v);
@@ -276,7 +281,7 @@ class SettingsPage extends StatelessWidget {
                 ListTile(
                   leading: Icon(Icons.account_balance_outlined,
                       color: p.primary),
-                  title: const Text('Default bank spread'),
+                  title: Text(l10n.defaultBankSpread),
                   subtitle: Text(
                     '${settings.bankFeePercent.toStringAsFixed(2)} %',
                     style: const TextStyle(fontSize: 11.5),
@@ -291,7 +296,7 @@ class SettingsPage extends StatelessWidget {
               ],
             ),
           ),
-          SectionLabel('Ads'),
+          SectionLabel(l10n.ads),
           SectionCard(
             padding: EdgeInsets.zero,
             child: Builder(
@@ -299,12 +304,12 @@ class SettingsPage extends StatelessWidget {
                 final AdsService ads = context.watch<AdsService>();
                 final Duration left = ads.adsFreeRemaining;
                 final String subtitle = left > Duration.zero
-                    ? 'Ads hidden for ${left.inMinutes} more minutes'
-                    : 'Watch a short video to hide ads for 1 hour';
+                    ? l10n.adsHiddenFor('${left.inMinutes}')
+                    : l10n.adsWatchToHide;
                 return ListTile(
                   leading: Icon(Icons.ondemand_video_outlined, color: p.primary),
                   title: Text(
-                    left > Duration.zero ? 'Ads paused' : 'Hide ads for 1 hour',
+                    left > Duration.zero ? l10n.adsPaused : l10n.hideAdsHour,
                   ),
                   subtitle: Text(
                     subtitle,
@@ -322,8 +327,8 @@ class SettingsPage extends StatelessWidget {
                             SnackBar(
                               content: Text(
                                 earned
-                                    ? 'Ads hidden for 1 hour'
-                                    : 'Ad not ready yet. Try again in a moment.',
+                                    ? L10n.read(context).adsHiddenHour
+                                    : L10n.read(context).adNotReady,
                               ),
                             ),
                           );
@@ -403,5 +408,16 @@ class SettingsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+String _roundingLabel(L10n l10n, RoundingMode mode) {
+  switch (mode) {
+    case RoundingMode.halfUp:
+      return l10n.roundHalfUp;
+    case RoundingMode.down:
+      return l10n.roundAlwaysDown;
+    case RoundingMode.up:
+      return l10n.roundAlwaysUp;
   }
 }
