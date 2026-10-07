@@ -117,25 +117,33 @@ class AppDrawer extends StatelessWidget {
             children: <Widget>[
               const BrandLogo(size: 42, radius: 12),
               const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    AppConfig.appName,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: p.onPrimary,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        AppConfig.appName,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: p.onPrimary,
+                        ),
+                      ),
                     ),
-                  ),
-                  Text(
-                    'v${AppConfig.appVersion}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: p.onPrimary.withOpacity(0.75),
+                    Text(
+                      'v${AppConfig.appVersion}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: p.onPrimary.withOpacity(0.75),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Keypad feedback, gated by the two switches in App Settings.
@@ -24,8 +25,9 @@ class Haptics {
   /// By default audioplayers requests `AndroidAudioFocus.gain`, which tells
   /// Android this app wants the audio stream — so Spotify pauses for every
   /// keypress. Declaring the click as a short interface sound and asking for
-  /// no focus at all leaves other players untouched. The iOS `ambient`
-  /// category plus `mixWithOthers` is the equivalent there.
+  /// no focus at all leaves other players untouched. On iOS the `ambient`
+  /// category already mixes with other audio; `mixWithOthers` is not a legal
+  /// option for that category and would stop the click from being set up.
   static final AudioContext _clickContext = AudioContext(
     android: const AudioContextAndroid(
       isSpeakerphoneOn: false,
@@ -36,11 +38,13 @@ class Haptics {
     ),
     iOS: AudioContextIOS(
       category: AVAudioSessionCategory.ambient,
-      options: const <AVAudioSessionOptions>{
-        AVAudioSessionOptions.mixWithOthers,
-      },
     ),
   );
+
+  /// The session the keypad click actually uses. Tests assert this so a
+  /// future change cannot quietly request audio focus again.
+  @visibleForTesting
+  static AudioContext get clickContext => _clickContext;
 
   static Future<void> warmup() async {
     if (_playerReady) return;

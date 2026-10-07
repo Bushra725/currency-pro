@@ -364,31 +364,35 @@ class _ActionPill extends StatelessWidget {
       child: InkWell(
         onTap: action.onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 9),
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Icon(action.icon, size: 17, color: action.color ?? palette.primary),
               const SizedBox(height: 4),
-              // The label keeps its own line break and is scaled down to fit
-              // rather than ellipsised, so the full wording is always
-              // readable — including longer translations.
-              SizedBox(
-                height: 22,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    action.label,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 9,
-                      height: 1.15,
-                      letterSpacing: 0.3,
-                      fontWeight: FontWeight.w700,
-                      color: palette.textSecondary,
+              // Scale only when a line is wider than the pill. The label is
+              // not locked to a short box, so both lines stay fully on screen.
+              LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  return FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth,
+                      ),
+                      child: Text(
+                        action.label,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 10,
+                          height: 1.15,
+                          fontWeight: FontWeight.w700,
+                          color: palette.textSecondary,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ],
           ),

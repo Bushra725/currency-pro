@@ -57,26 +57,32 @@ class _TrendChartPageState extends State<TrendChartPage> {
       _error = null;
     });
     try {
-      final List<RatePoint> points =
+      final HistorySeries result =
           await _api.series(_from, _to, _range.days);
       if (!mounted) return;
       setState(() {
-        _points = points;
         _loading = false;
-        if (points.isEmpty) {
-          // An empty series means either a pair the provider does not chart,
-          // or a request that came back with nothing. Neither is the user's
-          // problem to debug, so both get a plain-language message.
+        if (result.failed) {
+          _points = <RatePoint>[];
+          _error = _ChartError.network;
+        } else if (result.points.length < 2) {
+          _points = <RatePoint>[];
+          // An empty series is either a pair with no published history, or
+          // a response that came back with nothing. Neither case shows the
+          // request, the status code, or the query string.
           _error = _api.supports(_from, _to)
               ? _ChartError.network
               : _ChartError.unsupportedPair;
+        } else {
+          _points = result.points;
+          _error = null;
         }
       });
-    } catch (e, stack) {
-      // Keep the technical detail in the debug console only — never on screen.
-      debugPrint('Trend chart load failed for $_from/$_to: $e\n$stack');
+    } catch (_) {
+      debugPrint('Trend chart load failed for $_from/$_to');
       if (!mounted) return;
       setState(() {
+        _points = <RatePoint>[];
         _loading = false;
         _error = _ChartError.network;
       });

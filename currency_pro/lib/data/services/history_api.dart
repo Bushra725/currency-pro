@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/app_config.dart';
@@ -38,17 +39,26 @@ class HistoryApi {
     return ecbSupported.contains(from) && ecbSupported.contains(to);
   }
 
-  /// Returns daily points of "1 [from] = value [to]" for the last [days].
-  Future<List<RatePoint>> series(String from, String to, int days) async {
-    if (from == to) return <RatePoint>[];
-
-    final fromCrypto = AppConfig.coinGeckoIds.containsKey(from);
-    final toCrypto = AppConfig.coinGeckoIds.containsKey(to);
-
-    if (fromCrypto || toCrypto) {
-      return _cryptoSeries(from, to, days, fromCrypto, toCrypto);
+  /// Daily points of "1 [from] = value [to]" for the last [days].
+  ///
+  /// Network, HTTP and parse failures come back as [HistorySeries.failed].
+  /// The request URL, status code and query string are not logged and are
+  /// not part of the result the screen can display.
+  Future<HistorySeries> series(String from, String to, int days) async {
+    if (from == to) return HistorySeries.ok(const <RatePoint>[]);
+    try {
+      final bool fromCrypto = AppConfig.coinGeckoIds.containsKey(from);
+      final bool toCrypto = AppConfig.coinGeckoIds.containsKey(to);
+      final List<RatePoint> points = (fromCrypto || toCrypto)
+          ? await _cryptoSeries(from, to, days, fromCrypto, toCrypto)
+          : await _ecbSeries(from, to, days);
+      return HistorySeries.ok(points);
+    } catch (_) {
+      // The thrown error includes the host and query string. Do not log or
+      // return it — the screen only gets [HistorySeries.failed].
+      debugPrint('History series failed for $from/$to');
+      return HistorySeries.failed();
     }
-    return _ecbSeries(from, to, days);
   }
 
   Future<List<RatePoint>> _ecbSeries(String from, String to, int days) async {
@@ -75,7 +85,9 @@ class HistoryApi {
           '${AppConfig.frankfurterAppBase}/${isoDate(start)}..${isoDate(end)}?from=$from&to=$to';
       res = await getSeries(alt);
     }
-    if (res.statusCode != 200) return <RatePoint>[];
+    if (res.statusCode != 200) {
+      throw StateError('Chart history request was rejected');
+    }
 
     final body = jsonDecode(res.body) as Map<String, dynamic>;
     final rates = body['rates'];
@@ -156,4 +168,16 @@ class HistoryApi {
     _client.close();
     _metals.dispose();
   }
+}
+
+/// Chart points, or a failure that carries no URL, status code, or query.
+class HistorySeries {
+  const HistorySeries.ok(this.points) : failed = false;
+
+  const HistorySeries.failed()
+      : points = const <RatePoint>[],
+        failed = true;
+
+  final List<RatePoint> points;
+  final bool failed;
 }

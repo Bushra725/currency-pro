@@ -71,16 +71,21 @@ class RateAppBar extends StatelessWidget implements PreferredSizeWidget {
                         ),
                         const SizedBox(width: 6),
                         Flexible(
-                          child: Text(
-                            rates.hasData
-                                ? l10n.updated(Fmt.dateTime(rates.updatedAt))
-                                : l10n.waitingFirstUpdate,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w500,
-                              color: rates.isOffline ? p.down : p.textSecondary,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              rates.hasData
+                                  ? l10n.updated(Fmt.dateTime(rates.updatedAt))
+                                  : l10n.waitingFirstUpdate,
+                              maxLines: 1,
+                              softWrap: false,
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    rates.isOffline ? p.down : p.textSecondary,
+                              ),
                             ),
                           ),
                         ),

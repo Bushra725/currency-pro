@@ -66,9 +66,11 @@ class _BottomAdSlotState extends State<BottomAdSlot> {
               return SizedBox(
                 height: height,
                 width: double.infinity,
-                child: banner == null
-                    ? _placeholder(p)
-                    : AdWidget(key: ObjectKey(banner), ad: banner),
+                child: ClipRect(
+                  child: banner == null
+                      ? _placeholder(p)
+                      : AdWidget(key: ObjectKey(banner), ad: banner),
+                ),
               );
             },
           ),

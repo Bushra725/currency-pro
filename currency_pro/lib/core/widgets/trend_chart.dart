@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../data/models/rate_snapshot.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_palette.dart';
 import '../utils/formatting.dart';
 
@@ -47,9 +48,17 @@ class _TrendChartState extends State<TrendChart> {
       return SizedBox(
         height: widget.height,
         child: Center(
-          child: Text(
-            'No history available for this pair',
-            style: TextStyle(color: p.textSecondary, fontSize: 12.5),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              L10n.of(context).chartLoadFailed,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: p.textSecondary,
+                fontSize: 12.5,
+                height: 1.45,
+              ),
+            ),
           ),
         ),
       );

@@ -114,7 +114,9 @@ class MetalsApi {
     final uri = Uri.parse(AppConfig.coinGeckoChart(id, days));
     final res = await AppHttp.get(_client, uri);
     if (res.statusCode != 200) {
-      throw Exception('CoinGecko returned ${res.statusCode}');
+      // Status only. The chart URL and its query string must not travel
+      // with the error, because a caller might otherwise print them.
+      throw StateError('Chart history request was rejected');
     }
 
     final body = jsonDecode(res.body) as Map<String, dynamic>;

@@ -3,7 +3,7 @@ description: >-
   CurrencyPro — real-time currency converter with Bitcoin, gold and silver,
   plus a full suite of unit converters and everyday calculators.
 publish_to: "none"
-version: 1.6.0+168
+version: 1.6.1+169
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
