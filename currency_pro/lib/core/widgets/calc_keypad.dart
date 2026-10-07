@@ -370,16 +370,24 @@ class _ActionPill extends StatelessWidget {
             children: <Widget>[
               Icon(action.icon, size: 17, color: action.color ?? palette.primary),
               const SizedBox(height: 4),
-              Text(
-                action.label.replaceAll('\n', ' '),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 8.5,
-                  letterSpacing: 0.3,
-                  fontWeight: FontWeight.w700,
-                  color: palette.textSecondary,
+              // The label keeps its own line break and is scaled down to fit
+              // rather than ellipsised, so the full wording is always
+              // readable — including longer translations.
+              SizedBox(
+                height: 22,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    action.label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 9,
+                      height: 1.15,
+                      letterSpacing: 0.3,
+                      fontWeight: FontWeight.w700,
+                      color: palette.textSecondary,
+                    ),
+                  ),
                 ),
               ),
             ],
