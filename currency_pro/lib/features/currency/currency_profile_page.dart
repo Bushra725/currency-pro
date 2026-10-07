@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/widgets/app_drawer.dart';
@@ -35,6 +36,7 @@ class _CurrencyProfilePageState extends State<CurrencyProfilePage> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
 
@@ -48,7 +50,7 @@ class _CurrencyProfilePageState extends State<CurrencyProfilePage> {
 
     return Scaffold(
       drawer: const AppDrawer(current: Routes.profile),
-      appBar: RateAppBar(title: 'Currency Profile'),
+      appBar: RateAppBar(title: l10n.currencyProfile),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
@@ -127,7 +129,7 @@ class _CurrencyProfilePageState extends State<CurrencyProfilePage> {
                 const SizedBox(height: 12),
                 Text(
                   rate == null
-                      ? 'Rate unavailable'
+                      ? l10n.rateUnavailable
                       : '1 ${c.code} = ${Fmt.smart(rate, maxDecimals: 6)} ${base.code}',
                   style: TextStyle(
                     fontSize: 15,
@@ -148,25 +150,25 @@ class _CurrencyProfilePageState extends State<CurrencyProfilePage> {
             ),
           ),
           const SizedBox(height: 12),
-          SectionLabel('Profile'),
+          SectionLabel(l10n.profileSection),
           SectionCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: <Widget>[
-                _row(p, 'ISO 4217 code', c.code, first: true),
-                _row(p, 'Currency name', c.name),
-                _row(p, 'Country / region', c.country.isEmpty ? '—' : c.country),
-                _row(p, 'Symbol', c.symbol.isEmpty ? '—' : c.symbol),
-                _row(p, 'Subunit', c.subunit),
-                _row(p, 'Decimal digits', '${c.decimals}'),
+                _row(p, l10n.isoCode, c.code, first: true),
+                _row(p, l10n.currencyNameLabel, c.name),
+                _row(p, l10n.countryRegion, c.country.isEmpty ? '—' : c.country),
+                _row(p, l10n.symbolLabel, c.symbol.isEmpty ? '—' : c.symbol),
+                _row(p, l10n.subunitLabel, c.subunit),
+                _row(p, l10n.decimalDigits, '${c.decimals}'),
                 _row(
                   p,
-                  'Asset class',
+                  l10n.assetClass,
                   c.isFiat
-                      ? 'Fiat currency'
-                      : (c.isMetal ? 'Precious metal' : 'Cryptocurrency'),
+                      ? l10n.fiatCurrency
+                      : (c.isMetal ? l10n.preciousMetal : l10n.cryptocurrency),
                 ),
-                if (c.flag.isNotEmpty) _row(p, 'Flag', c.flag),
+                if (c.flag.isNotEmpty) _row(p, l10n.flagLabel, c.flag),
               ],
             ),
           ),
@@ -178,9 +180,7 @@ class _CurrencyProfilePageState extends State<CurrencyProfilePage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Rates are mid-market reference values from '
-                    '${rates.provider}. Banks and exchanges add their own '
-                    'spread — use Exchange Rate Adjustment to model it.',
+                    l10n.profileRateNote(rates.provider),
                     style:
                         TextStyle(fontSize: 11.5, color: p.textSecondary),
                   ),
