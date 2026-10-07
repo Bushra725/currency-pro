@@ -129,8 +129,8 @@ class _ConverterPageState extends State<ConverterPage> {
     final String b = other == null
         ? '—'
         : '${s.format(other)} ${_editingTop ? s.toCode : s.fromCode}';
-    return '$a = $b\n(rate from ${rates.provider}, '
-        '${Fmt.dateTime(rates.updatedAt)})';
+    final L10n l10n = L10n.read(context);
+    return '$a = $b\n(${l10n.shareRateLine(rates.provider, Fmt.dateTime(rates.updatedAt))})';
   }
 
   Future<void> _copy() async {
@@ -138,13 +138,16 @@ class _ConverterPageState extends State<ConverterPage> {
     await Clipboard.setData(ClipboardData(text: _shareText()));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Conversion copied to clipboard')),
+      SnackBar(content: Text(L10n.read(context).conversionCopied)),
     );
   }
 
   Future<void> _send() async {
     _feedback();
-    await Share.share(_shareText(), subject: 'Currency conversion');
+    await Share.share(
+      _shareText(),
+      subject: L10n.read(context).currencyConversion,
+    );
   }
 
   Future<void> _pick({required bool top}) async {
@@ -233,7 +236,16 @@ class _ConverterPageState extends State<ConverterPage> {
       body: Column(
         children: <Widget>[
           const OfflineBanner(),
-          _pairPanel(p, settings, from, to, topText, bottomText, unitRate),
+          _pairPanel(
+            p,
+            settings,
+            from,
+            to,
+            topText,
+            bottomText,
+            unitRate,
+            l10n,
+          ),
           QuickActionBar(
             actions: <QuickAction>[
               QuickAction(
@@ -296,6 +308,7 @@ class _ConverterPageState extends State<ConverterPage> {
     String topText,
     String bottomText,
     double? unitRate,
+    L10n l10n,
   ) {
     // A borderless hero panel. The rule that used to close it off at the
     // bottom is gone — the gradient simply fades into the page.
@@ -331,7 +344,7 @@ class _ConverterPageState extends State<ConverterPage> {
                     const SizedBox(width: 5),
                     Text(
                       unitRate == null
-                          ? 'Rate unavailable'
+                          ? l10n.rateUnavailable
                           : '1 ${from.code} = ${Fmt.smart(unitRate, maxDecimals: 6)} ${to.code}',
                       style: TextStyle(
                         fontSize: 11,
