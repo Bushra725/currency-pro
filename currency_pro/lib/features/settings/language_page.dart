@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 import '../../state/settings_provider.dart';
 
@@ -18,7 +19,7 @@ class LanguagePage extends StatelessWidget {
     final String selected = settings.localeCode;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.selectLanguage)),
+      appBar: AppBar(title: ScreenTitle(l10n.selectLanguage)),
       body: ListView.separated(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         itemCount: AppLocales.options.length,
