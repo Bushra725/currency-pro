@@ -18,9 +18,36 @@ class Haptics {
   static final AudioPlayer _click = AudioPlayer();
   static bool _playerReady = false;
 
+  /// Audio settings that let the click play *over* whatever the user is
+  /// listening to.
+  ///
+  /// By default audioplayers requests `AndroidAudioFocus.gain`, which tells
+  /// Android this app wants the audio stream — so Spotify pauses for every
+  /// keypress. Declaring the click as a short interface sound and asking for
+  /// no focus at all leaves other players untouched. The iOS `ambient`
+  /// category plus `mixWithOthers` is the equivalent there.
+  static final AudioContext _clickContext = AudioContext(
+    android: const AudioContextAndroid(
+      isSpeakerphoneOn: false,
+      stayAwake: false,
+      contentType: AndroidContentType.sonification,
+      usageType: AndroidUsageType.assistanceSonification,
+      audioFocus: AndroidAudioFocus.none,
+    ),
+    iOS: AudioContextIOS(
+      category: AVAudioSessionCategory.ambient,
+      options: const <AVAudioSessionOptions>{
+        AVAudioSessionOptions.mixWithOthers,
+      },
+    ),
+  );
+
   static Future<void> warmup() async {
     if (_playerReady) return;
     try {
+      // Global first: it covers the session-level category on iOS.
+      await AudioPlayer.global.setAudioContext(_clickContext);
+      await _click.setAudioContext(_clickContext);
       await _click.setReleaseMode(ReleaseMode.stop);
       await _click.setPlayerMode(PlayerMode.lowLatency);
       await _click.setVolume(0.6);
@@ -58,7 +85,12 @@ class Haptics {
     try {
       await warmup();
       await _click.stop();
-      await _click.play(AssetSource('sounds/key_click.wav'), volume: 0.6);
+      await _click.play(
+        AssetSource('sounds/key_click.wav'),
+        volume: 0.6,
+        ctx: _clickContext,
+        mode: PlayerMode.lowLatency,
+      );
     } catch (_) {
       await SystemSound.play(SystemSoundType.click);
     }
