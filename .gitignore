@@ -1,6 +1,6 @@
 # Play artifacts and local tooling
 publish/
-tools/
+/tools/
 *.zip
 
 # Alternate / extracted trees (not the shipping app)
