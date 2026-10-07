@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/ads/native_ad_card.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/widgets/app_drawer.dart';
@@ -45,6 +46,7 @@ class _RateListPageState extends State<RateListPage> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
     final Currency base = CurrencyLookup.of(settings.baseCode);
@@ -59,10 +61,10 @@ class _RateListPageState extends State<RateListPage> {
     return Scaffold(
       drawer: const AppDrawer(current: Routes.rateList),
       appBar: RateAppBar(
-        title: 'Exchange Rate List',
+        title: l10n.rateList,
         actions: <Widget>[
           IconButton(
-            tooltip: _favoritesOnly ? 'Show all' : 'Favorites only',
+            tooltip: _favoritesOnly ? l10n.showAll : l10n.favoritesOnly,
             icon: Icon(
               _favoritesOnly ? Icons.star : Icons.star_border,
               size: 20,
@@ -83,13 +85,13 @@ class _RateListPageState extends State<RateListPage> {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Base Currency', width: 104),
+                    FieldLabel(l10n.baseCurrency, width: 104),
                     Expanded(
                       child: InkWell(
                         onTap: () async {
                           final Currency? picked = await CurrencyPicker.show(
                             context,
-                            title: 'Base currency',
+                            title: L10n.read(context).baseCurrency,
                           );
                           if (picked != null) {
                             await settings.setBaseCode(picked.code);
@@ -128,7 +130,7 @@ class _RateListPageState extends State<RateListPage> {
                 const SizedBox(height: 10),
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Base amount', width: 104),
+                    FieldLabel(l10n.baseAmount, width: 104),
                     Expanded(
                       child: TextField(
                         controller: _amount,
@@ -145,7 +147,7 @@ class _RateListPageState extends State<RateListPage> {
                     const SizedBox(width: 8),
                     FilledButton(
                       onPressed: _apply,
-                      child: const Text('APPLY'),
+                      child: Text(l10n.apply),
                     ),
                   ],
                 ),
@@ -157,9 +159,9 @@ class _RateListPageState extends State<RateListPage> {
             child: TextField(
               controller: _search,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                hintText: 'Filter currencies',
-                prefixIcon: Icon(Icons.search, size: 19),
+              decoration: InputDecoration(
+                hintText: l10n.filterCurrencies,
+                prefixIcon: const Icon(Icons.search, size: 19),
               ),
             ),
           ),
@@ -190,10 +192,10 @@ class _RateListPageState extends State<RateListPage> {
           ),
           Expanded(
             child: pool.isEmpty
-                ? const EmptyState(
+                ? EmptyState(
                     icon: Icons.search_off,
-                    title: 'Nothing to show',
-                    message: 'Try a different filter, or refresh the rates.',
+                    title: l10n.nothingToShow,
+                    message: l10n.tryAnotherFilter,
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
