@@ -40,8 +40,18 @@ class MainActivity : FlutterActivity() {
 
     private fun openUrl(url: String?): Boolean {
         if (url.isNullOrBlank()) return false
+        val uri = Uri.parse(url)
+        // mailto: needs ACTION_SENDTO. ACTION_VIEW is handled by browsers on
+        // some devices and by nothing at all on others.
+        val action =
+            if (uri.scheme.equals("mailto", ignoreCase = true)) Intent.ACTION_SENDTO
+            else Intent.ACTION_VIEW
         return try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            val intent = Intent(action, uri).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            if (intent.resolveActivity(packageManager) == null) return false
+            startActivity(intent)
             true
         } catch (_: Exception) {
             false
