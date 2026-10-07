@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/widgets/app_drawer.dart';
@@ -47,6 +48,7 @@ class _RateAdjustmentPageState extends State<RateAdjustmentPage> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
 
@@ -65,7 +67,7 @@ class _RateAdjustmentPageState extends State<RateAdjustmentPage> {
 
     return Scaffold(
       drawer: const AppDrawer(current: Routes.adjustment),
-      appBar: RateAppBar(title: 'Exchange Rate Adjustment'),
+      appBar: RateAppBar(title: l10n.adjustment),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
@@ -76,7 +78,7 @@ class _RateAdjustmentPageState extends State<RateAdjustmentPage> {
                 const SizedBox(height: 12),
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Send amount', width: 108),
+                    FieldLabel(l10n.sendAmount, width: 108),
                     Expanded(
                       child: TextField(
                         controller: _amount,
@@ -96,7 +98,7 @@ class _RateAdjustmentPageState extends State<RateAdjustmentPage> {
                 const SizedBox(height: 10),
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Fixed fee', width: 108),
+                    FieldLabel(l10n.fixedFee, width: 108),
                     Expanded(
                       child: TextField(
                         controller: _fixedFee,
@@ -123,7 +125,7 @@ class _RateAdjustmentPageState extends State<RateAdjustmentPage> {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Bank spread', width: 108),
+                    FieldLabel(l10n.bankSpread, width: 108),
                     const Spacer(),
                     Text(
                       '${spread.toStringAsFixed(2)} %',
@@ -142,8 +144,7 @@ class _RateAdjustmentPageState extends State<RateAdjustmentPage> {
                   onChanged: (double v) => settings.setBankFeePercent(v),
                 ),
                 Text(
-                  'Most banks quote 1.5 – 4 % below the mid-market rate. '
-                  'Money-transfer apps are usually 0.3 – 1 %.',
+                  l10n.bankSpreadHint,
                   style: TextStyle(fontSize: 11, color: p.textSecondary),
                 ),
               ],
@@ -155,31 +156,31 @@ class _RateAdjustmentPageState extends State<RateAdjustmentPage> {
             borderColor: p.primary.withOpacity(0.5),
             child: Column(
               children: <Widget>[
-                _row(p, 'Mid-market rate',
+                _row(p, l10n.midMarketRate,
                     mid == null ? '—' : Fmt.smart(mid, maxDecimals: 6)),
                 const SizedBox(height: 8),
                 _row(
                   p,
-                  'Adjusted rate',
+                  l10n.adjustedRate,
                   effective == null
                       ? '—'
                       : Fmt.smart(effective, maxDecimals: 6),
                   highlight: true,
                 ),
                 Divider(height: 22, color: p.outline),
-                _row(p, 'Amount converted',
+                _row(p, l10n.amountConverted,
                     '${settings.format(netSource)} $_from'),
                 const SizedBox(height: 8),
                 _row(
                   p,
-                  'Recipient gets',
+                  l10n.recipientGets,
                   payout == null ? '—' : '${settings.format(payout)} $_to',
                   highlight: true,
                 ),
                 const SizedBox(height: 8),
                 _row(
                   p,
-                  'Total cost of transfer',
+                  l10n.transferCost,
                   cost == null ? '—' : '${settings.format(cost)} $_to',
                   color: p.down,
                 ),
@@ -187,16 +188,16 @@ class _RateAdjustmentPageState extends State<RateAdjustmentPage> {
             ),
           ),
           const SizedBox(height: 14),
-          SectionLabel('Compare providers'),
+          SectionLabel(l10n.compareProviders),
           SectionCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: <List<dynamic>>[
-                <dynamic>['Mid-market (no fee)', 0.0, 0.0],
-                <dynamic>['Transfer app', 0.6, 2.0],
-                <dynamic>['Online bank', 2.0, 5.0],
-                <dynamic>['Branch / counter', 3.5, 10.0],
-                <dynamic>['Airport kiosk', 8.0, 0.0],
+                <dynamic>[l10n.providerMid, 0.0, 0.0],
+                <dynamic>[l10n.providerApp, 0.6, 2.0],
+                <dynamic>[l10n.providerBank, 2.0, 5.0],
+                <dynamic>[l10n.providerBranch, 3.5, 10.0],
+                <dynamic>[l10n.providerAirport, 8.0, 0.0],
               ].map((List<dynamic> row) {
                 final String label = row[0] as String;
                 final double pct = row[1] as double;
@@ -230,8 +231,13 @@ class _RateAdjustmentPageState extends State<RateAdjustmentPage> {
                               ),
                             ),
                             Text(
-                              '${pct.toStringAsFixed(1)}% spread'
-                              '${fee > 0 ? ' + ${fee.toStringAsFixed(0)} $_from' : ''}',
+                              fee > 0
+                                  ? l10n.spreadWithFee(
+                                      pct.toStringAsFixed(1),
+                                      fee.toStringAsFixed(0),
+                                      _from,
+                                    )
+                                  : l10n.spreadOnly(pct.toStringAsFixed(1)),
                               style: TextStyle(
                                   fontSize: 10.5, color: p.textSecondary),
                             ),
