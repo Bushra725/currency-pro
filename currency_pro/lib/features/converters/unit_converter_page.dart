@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/expression_parser.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/utils/haptics.dart';
+import '../../core/widgets/app_dropdown.dart';
 import '../../core/widgets/calc_keypad.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 import '../../state/settings_provider.dart';
 import 'unit_models.dart';
@@ -57,21 +60,22 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Result copied')),
+      SnackBar(content: Text(L10n.read(context).resultCopied)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final UnitCategory category = widget.category;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(category.name.toUpperCase()),
+        title: ScreenTitle(category.name.toUpperCase()),
         actions: <Widget>[
           IconButton(
-            tooltip: 'Swap units',
+            tooltip: l10n.swapUnits,
             icon: const Icon(Icons.swap_vert, size: 20),
             onPressed: () {
               _feedback();
@@ -133,8 +137,10 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Base unit: ${category.baseUnitLabel} · '
-                    '${category.units.length} units',
+                    l10n.baseUnitLine(
+                      category.baseUnitLabel,
+                      '${category.units.length}',
+                    ),
                     style:
                         TextStyle(fontSize: 10.5, color: p.textSecondary),
                   ),
@@ -142,7 +148,7 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
                 TextButton.icon(
                   onPressed: _copy,
                   icon: const Icon(Icons.copy, size: 14),
-                  label: const Text('COPY', style: TextStyle(fontSize: 11)),
+                  label: Text(l10n.copy, style: const TextStyle(fontSize: 11)),
                 ),
               ],
             ),
@@ -239,32 +245,25 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
       children: <Widget>[
         SizedBox(
           width: 150,
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: unit.symbol,
-              borderRadius: BorderRadius.circular(12),
-              items: widget.category.units
-                  .map(
-                    (Unit u) => DropdownMenuItem<String>(
-                      value: u.symbol,
-                      child: Text(
-                        u.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: p.textPrimary,
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (String? symbol) {
-                if (symbol == null) return;
-                onUnitChanged(widget.category.unitBySymbol(symbol));
-              },
+          child: AppDropdown<String>(
+            expand: true,
+            value: unit.symbol,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            labelStyle: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: p.textPrimary,
             ),
+            entries: widget.category.units
+                .map(
+                  (Unit u) => AppDropdownEntry<String>(
+                    value: u.symbol,
+                    label: u.label,
+                  ),
+                )
+                .toList(growable: false),
+            onChanged: (String symbol) =>
+                onUnitChanged(widget.category.unitBySymbol(symbol)),
           ),
         ),
         Expanded(
