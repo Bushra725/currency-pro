@@ -97,6 +97,14 @@ class _CurrencyProAppState extends State<CurrencyProApp>
   }
 
   @override
+  void didChangeLocales(List<Locale>? locales) {
+    // While the user is on "System default", a language change in Android
+    // settings should take effect without restarting the app.
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final AdsService ads = context.read<AdsService>();
     if (state == AppLifecycleState.paused ||
@@ -141,9 +149,10 @@ class _CurrencyProAppState extends State<CurrencyProApp>
         debugShowCheckedModeBanner: false,
         scaffoldMessengerKey: scaffoldMessengerKey,
         theme: AppTheme.build(palette),
-        locale: settings.localeCode == AppLocales.systemCode
-            ? null
-            : Locale(AppLocales.canonical(settings.localeCode)),
+        // Always explicit. Leaving this null for "System default" let
+        // WidgetsApp fall back to the locale it had cached at startup, which
+        // was the previously chosen language.
+        locale: AppLocales.effectiveLocale(settings.localeCode),
         supportedLocales: AppLocales.materialLocales,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           GlobalMaterialLocalizations.delegate,
@@ -152,10 +161,7 @@ class _CurrencyProAppState extends State<CurrencyProApp>
         ],
         localeListResolutionCallback:
             (List<Locale>? locales, Iterable<Locale> supported) {
-          return AppLocales.resolve(
-            settings.localeCode,
-            locales ?? const <Locale>[],
-          );
+          return AppLocales.effectiveLocale(settings.localeCode);
         },
         initialRoute: Routes.home,
         routes: Routes.table(),
