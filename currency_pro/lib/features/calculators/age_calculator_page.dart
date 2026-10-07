@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 
 /// Exact age in years / months / days, plus totals and the next birthday.
@@ -78,7 +79,7 @@ class _AgeCalculatorPageState extends State<AgeCalculatorPage> {
     final int daysToBirthday = next.difference(_on).inDays;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.ageCalculator)),
+      appBar: AppBar(title: ScreenTitle(l10n.ageCalculator)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
