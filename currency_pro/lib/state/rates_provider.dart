@@ -3,12 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/app_config.dart';
+import '../core/l10n/l10n.dart';
 import '../data/fallback_rates.dart';
 import '../data/models/rate_snapshot.dart';
 import '../data/repositories/rates_repository.dart';
 import '../data/services/metals_api.dart';
 
 enum RatesStatus { idle, loading, ready, error }
+
+/// Why the last rate refresh failed. Shown only through [RatesProvider.failureText].
+enum RatesFailure { unreachable }
 
 /// Holds the live rate table and exposes conversion helpers to the UI.
 class RatesProvider extends ChangeNotifier {
@@ -22,7 +26,7 @@ class RatesProvider extends ChangeNotifier {
 
   RateSnapshot _snapshot = RateSnapshot.empty;
   RatesStatus _status = RatesStatus.idle;
-  String? _error;
+  RatesFailure? _failure;
   Timer? _autoTimer;
   bool _lastFetchFailed = false;
   bool _usingFallback = false;
@@ -30,7 +34,17 @@ class RatesProvider extends ChangeNotifier {
 
   RateSnapshot get snapshot => _snapshot;
   RatesStatus get status => _status;
-  String? get error => _error;
+
+  /// A sentence for the user when the last refresh failed.
+  String? failureText(L10n l10n) {
+    switch (_failure) {
+      case RatesFailure.unreachable:
+        return l10n.ratesUnreachable;
+      case null:
+        return null;
+    }
+  }
+
   bool get isLoading => _status == RatesStatus.loading;
   bool get hasData => !_snapshot.isEmpty;
   bool get isOffline =>
@@ -52,7 +66,7 @@ class RatesProvider extends ChangeNotifier {
 
   Future<void> refresh() async {
     _status = RatesStatus.loading;
-    _error = null;
+    _failure = null;
     notifyListeners();
     try {
       _snapshot = await _repo.refresh();
@@ -60,8 +74,9 @@ class RatesProvider extends ChangeNotifier {
       _lastFetchFailed = false;
       _usingFallback = _snapshot.provider == FallbackRates.providerName;
       _generation++;
-    } catch (e) {
-      _error = e.toString();
+    } catch (e, stack) {
+      debugPrint('Rate refresh failed: $e\n$stack');
+      _failure = RatesFailure.unreachable;
       _lastFetchFailed = true;
       _usingFallback = _snapshot.provider == FallbackRates.providerName;
       _status = hasData ? RatesStatus.ready : RatesStatus.error;
