@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 
 /// Days between two dates, and date ± a number of days.
@@ -52,22 +54,23 @@ class _DateDifferencePageState extends State<DateDifferencePage> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final int days = _days;
     final DateTime result = _addBase.add(Duration(days: _addDays));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('DATE DIFFERENCE')),
+      appBar: AppBar(title: ScreenTitle(l10n.dateDiff)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
-          SectionLabel('Days between two dates', padding: EdgeInsets.zero),
+          SectionLabel(l10n.dateDiffSub, padding: EdgeInsets.zero),
           SectionCard(
             child: Column(
               children: <Widget>[
-                _dateRow(p, 'From', _start,
+                _dateRow(p, l10n.fromLabel, _start,
                     () => _pick((DateTime d) => _start = d, _start)),
                 const SizedBox(height: 12),
-                _dateRow(p, 'To', _end,
+                _dateRow(p, l10n.toLabel, _end,
                     () => _pick((DateTime d) => _end = d, _end)),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
@@ -75,7 +78,7 @@ class _DateDifferencePageState extends State<DateDifferencePage> {
                   value: _includeEndDay,
                   onChanged: (bool v) => setState(() => _includeEndDay = v),
                   title: Text(
-                    'Include the end day',
+                    l10n.includeEndDay,
                     style: TextStyle(fontSize: 13, color: p.textPrimary),
                   ),
                 ),
@@ -97,35 +100,35 @@ class _DateDifferencePageState extends State<DateDifferencePage> {
                   ),
                 ),
                 Text(
-                  days.abs() == 1 ? 'day' : 'days',
+                  days.abs() == 1 ? l10n.oneDay : l10n.days,
                   style: TextStyle(fontSize: 12, color: p.textSecondary),
                 ),
                 Divider(height: 22, color: p.outline),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
-                    _mini(p, Fmt.amount(days / 7, decimals: 1), 'weeks'),
+                    _mini(p, Fmt.amount(days / 7, decimals: 1), l10n.weeks),
                     _mini(p, Fmt.amount(days / 30.4375, decimals: 1),
-                        'months'),
+                        l10n.months),
                     _mini(p, Fmt.amount(days / 365.2425, decimals: 2),
-                        'years'),
-                    _mini(p, '$_weekdays', 'weekdays'),
+                        l10n.years),
+                    _mini(p, '$_weekdays', l10n.weekdays),
                   ],
                 ),
               ],
             ),
           ),
           const SizedBox(height: 18),
-          SectionLabel('Add or subtract days', padding: EdgeInsets.zero),
+          SectionLabel(l10n.addSubtractDays, padding: EdgeInsets.zero),
           SectionCard(
             child: Column(
               children: <Widget>[
-                _dateRow(p, 'Start date', _addBase,
+                _dateRow(p, l10n.startDate, _addBase,
                     () => _pick((DateTime d) => _addBase = d, _addBase)),
                 const SizedBox(height: 14),
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Days', width: 120),
+                    FieldLabel(l10n.daysLabel, width: 120),
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline, size: 22),
                       onPressed: () => setState(() => _addDays--),
