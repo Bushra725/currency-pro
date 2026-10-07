@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 
 /// The six percentage questions people actually ask.
@@ -49,45 +51,55 @@ class _PercentageCalculatorPageState extends State<PercentageCalculatorPage> {
     final double r4inc = _v(_a4) * (1 + _v(_b4) / 100);
     final double r4dec = _v(_a4) * (1 - _v(_b4) / 100);
 
+    final L10n l10n = L10n.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('PERCENTAGE CALCULATOR')),
+      appBar: AppBar(title: ScreenTitle(l10n.percentageCalculator)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
           _card(
             p,
-            question: 'What is X % of Y?',
+            question: l10n.pctOfQuestion,
             fields: <Widget>[
               _field(p, _a1, 'X', suffix: '%'),
               _field(p, _b1, 'Y'),
             ],
-            result: '${_v(_a1)}% of ${Fmt.smart(_v(_b1))} = '
-                '${Fmt.smart(r1)}',
+            result: l10n.pctOfResult(
+              '${_v(_a1)}',
+              Fmt.smart(_v(_b1)),
+              Fmt.smart(r1),
+            ),
           ),
           _card(
             p,
-            question: 'X is what percent of Y?',
+            question: l10n.pctWhatQuestion,
             fields: <Widget>[
               _field(p, _a2, 'X'),
               _field(p, _b2, 'Y'),
             ],
-            result: '${Fmt.smart(_v(_a2))} is '
-                '${Fmt.smart(r2, maxDecimals: 2)}% of ${Fmt.smart(_v(_b2))}',
+            result: l10n.pctIsResult(
+              Fmt.smart(_v(_a2)),
+              Fmt.smart(r2, maxDecimals: 2),
+              Fmt.smart(_v(_b2)),
+            ),
           ),
           _card(
             p,
-            question: 'Percentage change from X to Y',
+            question: l10n.pctChangeQuestion,
             fields: <Widget>[
-              _field(p, _a3, 'From'),
-              _field(p, _b3, 'To'),
+              _field(p, _a3, l10n.fromLabel),
+              _field(p, _b3, l10n.toLabel),
             ],
-            result: '${r3 >= 0 ? 'Increase' : 'Decrease'} of '
-                '${Fmt.smart(r3.abs(), maxDecimals: 2)}%',
+            result: l10n.changeOf(
+              r3 >= 0 ? l10n.increase : l10n.decrease,
+              Fmt.smart(r3.abs(), maxDecimals: 2),
+            ),
             resultColor: r3 >= 0 ? p.up : p.down,
           ),
           _card(
             p,
-            question: 'Increase / decrease X by Y %',
+            question: l10n.pctAdjustQuestion,
             fields: <Widget>[
               _field(p, _a4, 'X'),
               _field(p, _b4, 'Y', suffix: '%'),
@@ -102,8 +114,7 @@ class _PercentageCalculatorPageState extends State<PercentageCalculatorPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Tip: a 50 % rise followed by a 50 % fall does not return '
-                    'you to the start — it leaves you 25 % down.',
+                    l10n.pctReversalTip,
                     style:
                         TextStyle(fontSize: 11.5, color: p.textSecondary),
                   ),
