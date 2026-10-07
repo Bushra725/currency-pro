@@ -174,39 +174,62 @@ class AppDrawer extends StatelessWidget {
     Color tint,
   ) {
     final bool selected = route == current;
-    return ListTile(
-      dense: true,
-      visualDensity: const VisualDensity(vertical: -1),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-      minLeadingWidth: 28,
-      shape: RoundedRectangleBorder(
+
+    // The highlight is painted by this row's own Material.
+    //
+    // ListTile draws `selectedTileColor` as an `Ink` decoration, and `Ink`
+    // paints onto the nearest ancestor Material — here the Drawer itself,
+    // which does not scroll. That is why the highlight used to stay pinned
+    // to the screen while the labels slid underneath it. Giving every row a
+    // Material of its own puts the fill (and the tap ripple) inside the
+    // scrollable, so both travel with the text.
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Material(
+        color: selected ? p.primarySoft : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-      ),
-      leading: Icon(icon, size: 20, color: selected ? p.primary : tint),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontSize: 13.5,
-          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-          color: selected ? p.primary : p.textPrimary,
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          dense: true,
+          visualDensity: const VisualDensity(vertical: -1),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+          minLeadingWidth: 28,
+          // Both are transparent on purpose: the Material above owns the fill.
+          tileColor: Colors.transparent,
+          selectedTileColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          leading: Icon(icon, size: 20, color: selected ? p.primary : tint),
+          title: Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13.5,
+              height: 1.25,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected ? p.primary : p.textPrimary,
+            ),
+          ),
+          selected: selected,
+          onTap: () {
+            Navigator.of(context).pop();
+            if (selected) return;
+            if (route == Routes.home) {
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                Routes.home,
+                (Route<dynamic> r) => false,
+              );
+            } else {
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                route,
+                (Route<dynamic> r) => r.isFirst,
+              );
+            }
+          },
         ),
       ),
-      selected: selected,
-      onTap: () {
-        Navigator.of(context).pop();
-        if (selected) return;
-        if (route == Routes.home) {
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            Routes.home,
-            (Route<dynamic> r) => false,
-          );
-        } else {
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            route,
-            (Route<dynamic> r) => r.isFirst,
-          );
-        }
-      },
     );
   }
 }
