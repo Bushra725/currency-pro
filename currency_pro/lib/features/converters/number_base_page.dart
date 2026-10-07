@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
+import '../../core/widgets/app_dropdown.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 
 /// Decimal ↔ binary ↔ octal ↔ hexadecimal, plus an arbitrary base 2–36.
@@ -32,13 +35,14 @@ class _NumberBasePageState extends State<NumberBasePage> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final int? value = _value;
     _error = (_input.text.trim().isNotEmpty && value == null)
-        ? 'Not a valid base-$_inputBase number'
+        ? l10n.invalidBaseNumber('$_inputBase')
         : null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('NUMBER BASE')),
+      appBar: AppBar(title: ScreenTitle(l10n.numberBase)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
@@ -48,21 +52,17 @@ class _NumberBasePageState extends State<NumberBasePage> {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Input base', width: 104),
+                    FieldLabel(l10n.inputBase, width: 104),
                     const Spacer(),
-                    DropdownButton<int>(
+                    AppDropdown<int>(
                       value: _inputBase,
-                      underline: const SizedBox.shrink(),
-                      items: const <DropdownMenuItem<int>>[
-                        DropdownMenuItem<int>(value: 2, child: Text('Binary (2)')),
-                        DropdownMenuItem<int>(value: 8, child: Text('Octal (8)')),
-                        DropdownMenuItem<int>(
-                            value: 10, child: Text('Decimal (10)')),
-                        DropdownMenuItem<int>(
-                            value: 16, child: Text('Hexadecimal (16)')),
+                      entries: <AppDropdownEntry<int>>[
+                        AppDropdownEntry<int>(value: 2, label: l10n.binaryBase),
+                        AppDropdownEntry<int>(value: 8, label: l10n.octalBase),
+                        AppDropdownEntry<int>(value: 10, label: l10n.decimalBase),
+                        AppDropdownEntry<int>(value: 16, label: l10n.hexBase),
                       ],
-                      onChanged: (int? v) =>
-                          setState(() => _inputBase = v ?? 10),
+                      onChanged: (int v) => setState(() => _inputBase = v),
                     ),
                   ],
                 ),
@@ -73,7 +73,7 @@ class _NumberBasePageState extends State<NumberBasePage> {
                   onChanged: (_) => setState(() {}),
                   textCapitalization: TextCapitalization.characters,
                   decoration: InputDecoration(
-                    labelText: 'Value',
+                    labelText: l10n.valueLabel,
                     errorText: _error,
                   ),
                   style: TextStyle(
@@ -92,11 +92,11 @@ class _NumberBasePageState extends State<NumberBasePage> {
             padding: EdgeInsets.zero,
             child: Column(
               children: <Widget>[
-                _row(p, 'Binary', value?.toRadixString(2), first: true),
-                _row(p, 'Octal', value?.toRadixString(8)),
-                _row(p, 'Decimal', value?.toString()),
-                _row(p, 'Hexadecimal', value?.toRadixString(16).toUpperCase()),
-                _row(p, 'Base $_customBase',
+                _row(p, l10n.binary, value?.toRadixString(2), first: true),
+                _row(p, l10n.octal, value?.toRadixString(8)),
+                _row(p, l10n.decimalWord, value?.toString()),
+                _row(p, l10n.hexadecimal, value?.toRadixString(16).toUpperCase()),
+                _row(p, l10n.baseN('$_customBase'),
                     value?.toRadixString(_customBase).toUpperCase()),
               ],
             ),
@@ -108,7 +108,7 @@ class _NumberBasePageState extends State<NumberBasePage> {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    const FieldLabel('Custom base', width: 104),
+                    FieldLabel(l10n.customBase, width: 104),
                     const Spacer(),
                     Text(
                       '$_customBase',
@@ -133,7 +133,7 @@ class _NumberBasePageState extends State<NumberBasePage> {
           ),
           if (value != null) ...<Widget>[
             const SizedBox(height: 12),
-            SectionLabel('Bit view'),
+            SectionLabel(l10n.bitView),
             SectionCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,8 +152,10 @@ class _NumberBasePageState extends State<NumberBasePage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${value.toRadixString(2).length} significant bits · '
-                    'fits in ${_bytes(value)} byte(s)',
+                    l10n.bitSummary(
+                      '${value.toRadixString(2).length}',
+                      '${_bytes(value)}',
+                    ),
                     style:
                         TextStyle(fontSize: 11.5, color: p.textSecondary),
                   ),
