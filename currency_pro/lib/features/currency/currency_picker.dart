@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/widgets/flag_avatar.dart';
@@ -83,6 +84,10 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
+    final String title = widget.title == 'Select currency'
+        ? l10n.selectCurrency
+        : widget.title;
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
 
@@ -114,7 +119,7 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      widget.title,
+                      title,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -137,7 +142,7 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
                 textInputAction: TextInputAction.search,
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  hintText: 'Search code, name or country',
+                  hintText: l10n.searchCurrencyHint,
                   prefixIcon: const Icon(Icons.search, size: 20),
                   suffixIcon: _search.text.isEmpty
                       ? null
@@ -158,10 +163,10 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: <Widget>[
-                  _chip(p, 'All', CurrencyPickerTab.all),
-                  _chip(p, 'Favorites', CurrencyPickerTab.favorites),
-                  _chip(p, 'Metals', CurrencyPickerTab.metals),
-                  _chip(p, 'Crypto', CurrencyPickerTab.crypto),
+                  _chip(p, l10n.tabAll, CurrencyPickerTab.all),
+                  _chip(p, l10n.tabFavorites, CurrencyPickerTab.favorites),
+                  _chip(p, l10n.tabMetals, CurrencyPickerTab.metals),
+                  _chip(p, l10n.tabCrypto, CurrencyPickerTab.crypto),
                 ],
               ),
             ),
@@ -172,7 +177,7 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
               child: results.isEmpty
                   ? Center(
                       child: Text(
-                        'No match for "${_search.text}"',
+                        l10n.noCurrencyMatch(_search.text),
                         style: TextStyle(color: p.textSecondary),
                       ),
                     )
