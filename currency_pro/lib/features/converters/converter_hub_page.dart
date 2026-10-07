@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../core/ads/native_ad_card.dart';
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/widgets/app_drawer.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 import '../../routes.dart';
 import 'unit_catalog.dart';
@@ -16,10 +18,11 @@ class ConverterHubPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
 
     return Scaffold(
       drawer: const AppDrawer(current: Routes.converters),
-      appBar: AppBar(title: const Text('UNIT CONVERTERS')),
+      appBar: AppBar(title: ScreenTitle(l10n.unitConverters)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
@@ -38,7 +41,7 @@ class ConverterHubPage extends StatelessWidget {
               p,
               icon: c.icon,
               label: c.name,
-              subtitle: '${c.units.length} units',
+              subtitle: l10n.unitsCount('${c.units.length}'),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => UnitConverterPage(category: c),
@@ -50,24 +53,24 @@ class ConverterHubPage extends StatelessWidget {
             context,
             p,
             icon: Icons.height,
-            label: 'Height',
-            subtitle: 'ft/in ↔ cm',
+            label: l10n.height,
+            subtitle: l10n.heightSub,
             onTap: () => Navigator.of(context).pushNamed(Routes.height),
           ),
           _tile(
             context,
             p,
             icon: Icons.pin,
-            label: 'Number Base',
-            subtitle: 'bin/oct/hex',
+            label: l10n.numberBase,
+            subtitle: l10n.numberBaseSub,
             onTap: () => Navigator.of(context).pushNamed(Routes.numberBase),
           ),
           _tile(
             context,
             p,
             icon: Icons.currency_exchange,
-            label: 'Currency',
-            subtitle: '171 live rates',
+            label: l10n.currency,
+            subtitle: l10n.currencySub,
             onTap: () => Navigator.of(context).pushNamedAndRemoveUntil(
               Routes.home,
               (Route<dynamic> r) => false,
