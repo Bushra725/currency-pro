@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/widgets/app_drawer.dart';
@@ -21,11 +22,12 @@ class TravelBudgetPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final TripsProvider trips = context.watch<TripsProvider>();
 
     return Scaffold(
       drawer: const AppDrawer(current: Routes.travel),
-      appBar: RateAppBar(title: 'Travel Budget'),
+      appBar: RateAppBar(title: l10n.travelBudget),
       body: Column(
         children: <Widget>[
           Padding(
@@ -33,7 +35,7 @@ class TravelBudgetPage extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () => _newTrip(context),
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('ADD NEW TRIP'),
+              label: Text(l10n.addNewTrip),
               style: FilledButton.styleFrom(
                 minimumSize: const Size(double.infinity, 46),
               ),
@@ -45,12 +47,12 @@ class TravelBudgetPage extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: _counter(p, Icons.schedule,
-                      '${trips.ongoing.length}', 'Ongoing', p.primary),
+                      '${trips.ongoing.length}', l10n.ongoing, p.primary),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _counter(p, Icons.check_circle_outline,
-                      '${trips.completed.length}', 'Completed', p.up),
+                      '${trips.completed.length}', l10n.tripCompleted, p.up),
                 ),
               ],
             ),
@@ -58,11 +60,10 @@ class TravelBudgetPage extends StatelessWidget {
           const SizedBox(height: 10),
           Expanded(
             child: trips.all.isEmpty
-                ? const EmptyState(
+                ? EmptyState(
                     icon: Icons.luggage_outlined,
-                    title: 'No trips yet',
-                    message: 'Tap the button above to add a trip and start '
-                        'tracking your spending.',
+                    title: l10n.noTripsYet,
+                    message: l10n.noTripsMessage,
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
@@ -101,6 +102,7 @@ class TravelBudgetPage extends StatelessWidget {
   }
 
   static Future<void> _newTrip(BuildContext context) async {
+    final L10n l10n = L10n.read(context);
     final SettingsProvider settings = context.read<SettingsProvider>();
     final TextEditingController name = TextEditingController();
     final TextEditingController budget = TextEditingController(text: '1000');
@@ -130,7 +132,7 @@ class TravelBudgetPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'New trip',
+                  l10n.newTrip,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -140,9 +142,9 @@ class TravelBudgetPage extends StatelessWidget {
                 const SizedBox(height: 14),
                 TextField(
                   controller: name,
-                  decoration: const InputDecoration(
-                    labelText: 'Trip name',
-                    hintText: 'Dubai holiday',
+                  decoration: InputDecoration(
+                    labelText: l10n.tripName,
+                    hintText: l10n.tripNameHint,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -153,12 +155,12 @@ class TravelBudgetPage extends StatelessWidget {
                         onPressed: () async {
                           final Currency? picked =
                               await CurrencyPicker.show(context,
-                                  title: 'Home currency');
+                                  title: l10n.homeCurrency);
                           if (picked != null) {
                             setSheet(() => home = picked.code);
                           }
                         },
-                        child: Text('Home: $home'),
+                        child: Text(l10n.homeCode(home)),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -167,12 +169,12 @@ class TravelBudgetPage extends StatelessWidget {
                         onPressed: () async {
                           final Currency? picked =
                               await CurrencyPicker.show(context,
-                                  title: 'Local currency');
+                                  title: l10n.localCurrency);
                           if (picked != null) {
                             setSheet(() => local = picked.code);
                           }
                         },
-                        child: Text('Local: $local'),
+                        child: Text(l10n.localCode(local)),
                       ),
                     ),
                   ],
@@ -183,7 +185,7 @@ class TravelBudgetPage extends StatelessWidget {
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Budget',
+                    labelText: l10n.budgetLabel,
                     suffixText: home,
                   ),
                 ),
@@ -209,7 +211,7 @@ class TravelBudgetPage extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(double.infinity, 48),
                   ),
-                  child: const Text('CREATE TRIP'),
+                  child: Text(l10n.createTrip),
                 ),
               ],
             ),
@@ -219,7 +221,7 @@ class TravelBudgetPage extends StatelessWidget {
     );
 
     final String tripName =
-        name.text.trim().isEmpty ? 'Trip to $local' : name.text.trim();
+        name.text.trim().isEmpty ? l10n.tripTo(local) : name.text.trim();
     final double budgetValue = Fmt.parse(budget.text) ?? 0;
     name.dispose();
     budget.dispose();
@@ -258,6 +260,7 @@ class _TripCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final TripsProvider trips = context.read<TripsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
     final SettingsProvider settings = context.watch<SettingsProvider>();
@@ -292,7 +295,7 @@ class _TripCard extends StatelessWidget {
                       ),
                       Text(
                         '${Fmt.date(trip.startDate)} → '
-                        '${Fmt.date(trip.endDate)} · ${trip.days} days',
+                        '${Fmt.date(trip.endDate)} · ${l10n.daysCount(trip.days)}',
                         style: TextStyle(
                             fontSize: 11, color: p.textSecondary),
                       ),
@@ -312,12 +315,12 @@ class _TripCard extends StatelessWidget {
                     PopupMenuItem<String>(
                       value: 'done',
                       child: Text(
-                        trip.completed ? 'Mark as ongoing' : 'Mark completed',
+                        trip.completed ? l10n.markOngoing : l10n.markCompleted,
                       ),
                     ),
-                    const PopupMenuItem<String>(
+                    PopupMenuItem<String>(
                       value: 'delete',
-                      child: Text('Delete trip'),
+                      child: Text(l10n.deleteTrip),
                     ),
                   ],
                 ),
@@ -329,7 +332,7 @@ class _TripCard extends StatelessWidget {
                 Expanded(
                   child: _stat(
                     p,
-                    'Budget',
+                    l10n.budgetLabel,
                     '${settings.format(trip.budget)} ${trip.homeCurrency}',
                     p.textPrimary,
                   ),
@@ -337,7 +340,7 @@ class _TripCard extends StatelessWidget {
                 Expanded(
                   child: _stat(
                     p,
-                    'Spent',
+                    l10n.spent,
                     '${settings.format(trip.spentLocal)} ${trip.localCurrency}',
                     p.primary,
                   ),
@@ -345,7 +348,7 @@ class _TripCard extends StatelessWidget {
                 Expanded(
                   child: _stat(
                     p,
-                    'Left',
+                    l10n.amountLeft,
                     '${settings.format(remaining)} ${trip.homeCurrency}',
                     remaining >= 0 ? p.up : p.down,
                   ),
@@ -382,7 +385,7 @@ class _TripCard extends StatelessWidget {
                           Icon(_icons[e.key], size: 13, color: p.primary),
                           const SizedBox(width: 5),
                           Text(
-                            '${e.key.label} ${Fmt.smart(e.value)}',
+                            '${_categoryLabel(l10n, e.key)} ${Fmt.smart(e.value)}',
                             style: TextStyle(
                               fontSize: 11,
                               color: p.textPrimary,
@@ -402,7 +405,7 @@ class _TripCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => _addExpense(context, trip),
                     icon: const Icon(Icons.add, size: 16),
-                    label: const Text('EXPENSE'),
+                    label: Text(l10n.expenseBtn),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(0, 38),
                     ),
@@ -413,7 +416,7 @@ class _TripCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => _showExpenses(context, trip),
                     icon: const Icon(Icons.receipt_long, size: 16),
-                    label: Text('${trip.expenses.length} ITEMS'),
+                    label: Text(l10n.itemsCount('${trip.expenses.length}')),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(0, 38),
                     ),
@@ -447,6 +450,7 @@ class _TripCard extends StatelessWidget {
   }
 
   Future<void> _addExpense(BuildContext context, Trip trip) async {
+    final L10n l10n = L10n.read(context);
     final TextEditingController title = TextEditingController();
     final TextEditingController amount = TextEditingController();
     ExpenseCategory category = ExpenseCategory.food;
@@ -470,7 +474,7 @@ class _TripCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'Add expense',
+                  l10n.addExpense,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -480,7 +484,7 @@ class _TripCard extends StatelessWidget {
                 const SizedBox(height: 14),
                 TextField(
                   controller: title,
-                  decoration: const InputDecoration(labelText: 'What for?'),
+                  decoration: InputDecoration(labelText: l10n.whatFor),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -489,7 +493,7 @@ class _TripCard extends StatelessWidget {
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Amount',
+                    labelText: l10n.amountLabel,
                     suffixText: trip.localCurrency,
                   ),
                 ),
@@ -499,7 +503,7 @@ class _TripCard extends StatelessWidget {
                   children: ExpenseCategory.values.map((ExpenseCategory c) {
                     final bool selected = c == category;
                     return ChoiceChip(
-                      label: Text(c.label),
+                      label: Text(_categoryLabel(l10n, c)),
                       selected: selected,
                       showCheckmark: false,
                       onSelected: (_) => setSheet(() => category = c),
@@ -516,7 +520,7 @@ class _TripCard extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(double.infinity, 48),
                   ),
-                  child: const Text('SAVE EXPENSE'),
+                  child: Text(l10n.saveExpense),
                 ),
               ],
             ),
@@ -527,7 +531,7 @@ class _TripCard extends StatelessWidget {
 
     final double? value = Fmt.parse(amount.text);
     final String text =
-        title.text.trim().isEmpty ? category.label : title.text.trim();
+        title.text.trim().isEmpty ? _categoryLabel(l10n, category) : title.text.trim();
     title.dispose();
     amount.dispose();
 
@@ -551,6 +555,7 @@ class _TripCard extends StatelessWidget {
       isScrollControlled: true,
       useSafeArea: true,
       builder: (BuildContext sheetContext) {
+        final L10n l10n = L10n.read(sheetContext);
         final AppPalette p = sheetContext.palette;
         return Consumer<TripsProvider>(
           builder: (BuildContext context, TripsProvider provider, _) {
@@ -561,7 +566,7 @@ class _TripCard extends StatelessWidget {
               children: <Widget>[
                 const SizedBox(height: 16),
                 Text(
-                  '${trip.name} — expenses',
+                  l10n.tripExpenses(trip.name),
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -571,9 +576,9 @@ class _TripCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 Flexible(
                   child: items.isEmpty
-                      ? const EmptyState(
+                      ? EmptyState(
                           icon: Icons.receipt_long,
-                          title: 'Nothing logged yet',
+                          title: l10n.nothingLogged,
                         )
                       : ListView.separated(
                           shrinkWrap: true,
@@ -587,7 +592,7 @@ class _TripCard extends StatelessWidget {
                               leading: Icon(_icons[e.category], size: 20),
                               title: Text(e.title),
                               subtitle: Text(
-                                '${e.category.label} · ${Fmt.date(e.date)}',
+                                '${_categoryLabel(l10n, e.category)} · ${Fmt.date(e.date)}',
                                 style: TextStyle(fontSize: 11),
                               ),
                               trailing: Row(
@@ -620,5 +625,22 @@ class _TripCard extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+String _categoryLabel(L10n l10n, ExpenseCategory category) {
+  switch (category) {
+    case ExpenseCategory.food:
+      return l10n.catFood;
+    case ExpenseCategory.transport:
+      return l10n.catTransport;
+    case ExpenseCategory.hotel:
+      return l10n.catHotel;
+    case ExpenseCategory.shopping:
+      return l10n.catShopping;
+    case ExpenseCategory.sightseeing:
+      return l10n.catSightseeing;
+    case ExpenseCategory.other:
+      return l10n.catOther;
   }
 }
