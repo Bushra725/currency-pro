@@ -17,6 +17,11 @@ class RateAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.showUpdated = true,
     this.showRefresh = true,
+    this.showLogo = true,
+    this.uppercase = true,
+    this.titleMaxLines = 1,
+    this.titleFontSize = 14.5,
+    this.titleLetterSpacing = 0.9,
   });
 
   final String title;
@@ -24,8 +29,19 @@ class RateAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showUpdated;
   final bool showRefresh;
 
+  /// The mark eats width the title needs. Long names pass false so the
+  /// title can stay large enough to read.
+  final bool showLogo;
+
+  /// Long names stay larger in their normal capitalization. Short names
+  /// stay in capitals, matching the rest of the rate screens.
+  final bool uppercase;
+  final int titleMaxLines;
+  final double titleFontSize;
+  final double titleLetterSpacing;
+
   @override
-  Size get preferredSize => const Size.fromHeight(58);
+  Size get preferredSize => Size.fromHeight(titleMaxLines > 1 ? 72 : 58);
 
   @override
   Widget build(BuildContext context) {
@@ -33,12 +49,24 @@ class RateAppBar extends StatelessWidget implements PreferredSizeWidget {
     final L10n l10n = L10n.of(context);
     final RatesProvider rates = context.watch<RatesProvider>();
 
+    final String shown = uppercase ? title.toUpperCase() : title;
+    final TextStyle titleStyle = TextStyle(
+      fontSize: titleFontSize,
+      height: titleMaxLines > 1 ? 1.05 : null,
+      fontWeight: FontWeight.w800,
+      letterSpacing: titleLetterSpacing,
+      color: p.textPrimary,
+    );
+
     return AppBar(
-      toolbarHeight: 58,
+      toolbarHeight: titleMaxLines > 1 ? 72 : 58,
+      titleSpacing: showLogo ? null : 4,
       title: Row(
         children: <Widget>[
-          const BrandLogo(size: 30),
-          const SizedBox(width: 10),
+          if (showLogo) ...<Widget>[
+            const BrandLogo(size: 30),
+            const SizedBox(width: 10),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,15 +74,16 @@ class RateAppBar extends StatelessWidget implements PreferredSizeWidget {
               children: <Widget>[
                 // Shrinks rather than truncates, so even a long translated
                 // screen name stays fully readable next to the actions.
-                ScreenTitle(
-                  title.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.9,
-                    color: p.textPrimary,
-                  ),
-                ),
+                titleMaxLines > 1
+                    ? Text(
+                        shown,
+                        maxLines: titleMaxLines,
+                        style: titleStyle,
+                      )
+                    : ScreenTitle(
+                        shown,
+                        style: titleStyle,
+                      ),
                 if (showUpdated)
                   Padding(
                     padding: const EdgeInsets.only(top: 3),
@@ -101,6 +130,13 @@ class RateAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (showRefresh)
           IconButton(
             tooltip: l10n.updateRatesNow,
+            visualDensity: showLogo
+                ? VisualDensity.standard
+                : const VisualDensity(horizontal: -4, vertical: -4),
+            padding: showLogo ? null : EdgeInsets.zero,
+            constraints: showLogo
+                ? null
+                : const BoxConstraints(minWidth: 32, minHeight: 32),
             icon: rates.isLoading
                 ? SizedBox(
                     width: 18,

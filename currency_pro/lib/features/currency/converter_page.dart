@@ -202,14 +202,22 @@ class _ConverterPageState extends State<ConverterPage> {
       drawer: const AppDrawer(current: Routes.home),
       appBar: RateAppBar(
         title: l10n.realTimeCurrency,
+        showLogo: false,
+        uppercase: false,
+        titleFontSize: 17,
+        titleLetterSpacing: 0.15,
         actions: <Widget>[
           IconButton(
             tooltip: l10n.multiCurrency,
-            icon: const Icon(Icons.grid_view_rounded, size: 20),
+            visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            icon: const Icon(Icons.grid_view_rounded, size: 22),
             onPressed: () => Navigator.of(context).pushNamed(Routes.multi),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, size: 20),
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.more_vert, size: 22),
             onSelected: (String value) =>
                 Navigator.of(context).pushNamed(value),
             itemBuilder: (_) => <PopupMenuEntry<String>>[

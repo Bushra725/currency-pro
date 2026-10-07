@@ -369,6 +369,85 @@ void main() {
     }
   });
 
+  testWidgets('real-time and multi titles stay large on a phone',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(720, 1600);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final _Boot boot = await _boot();
+    final RatesProvider rates = _rates(boot.prefs);
+
+    Future<double> titleScale(String title, List<Widget> actions) async {
+      await tester.pumpWidget(_app(
+        boot.settings,
+        prefs: boot.prefs,
+        rates: rates,
+        home: Scaffold(
+          appBar: RateAppBar(
+            title: title,
+            showLogo: false,
+            uppercase: false,
+            titleMaxLines: title == 'Real-Time Currency' ? 1 : 2,
+            titleFontSize: title == 'Real-Time Currency' ? 17 : 16.5,
+            titleLetterSpacing: 0.15,
+            actions: actions,
+          ),
+        ),
+      ));
+      await tester.pump();
+      final String shown = title;
+      final Finder text = find.text(shown);
+      final Finder fitted = find.ancestor(
+        of: text,
+        matching: find.byType(FittedBox),
+      );
+      if (fitted.evaluate().isEmpty) return 1;
+      final RenderBox box = tester.renderObject<RenderBox>(fitted.first);
+      final RenderBox glyphs = tester.renderObject<RenderBox>(text);
+      return box.size.width / glyphs.size.width;
+    }
+
+    final double realTime = await titleScale(
+      'Real-Time Currency',
+      <Widget>[
+        IconButton(
+          onPressed: () {},
+          visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          icon: const Icon(Icons.grid_view_rounded),
+        ),
+        IconButton(
+          onPressed: () {},
+          visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          icon: const Icon(Icons.more_vert),
+        ),
+      ],
+    );
+    final double multi = await titleScale(
+      'Multi Currency Converter',
+      <Widget>[
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.flag_outlined),
+        ),
+      ],
+    );
+
+    // 0.80 of 17px is about 14px, in line with the other screen titles.
+    expect(realTime, greaterThan(0.80));
+    expect(multi, greaterThan(0.95));
+    expect(
+      tester.renderObject<RenderParagraph>(find.text('Multi Currency Converter')).didExceedMaxLines,
+      isFalse,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('multi currency count uses a flag, not a copy icon',
       (WidgetTester tester) async {
     final _Boot boot = await _boot();

@@ -7,11 +7,15 @@ class AppDropdownEntry<T> {
   const AppDropdownEntry({
     required this.value,
     required this.label,
+    this.buttonLabel,
     this.icon,
   });
 
   final T value;
   final String label;
+
+  /// Shorter face for the closed button. The open menu still shows [label].
+  final String? buttonLabel;
   final IconData? icon;
 }
 
@@ -177,7 +181,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
               ],
               Flexible(
                 child: Text(
-                  current?.label ?? '',
+                  current?.buttonLabel ?? current?.label ?? '',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: widget.labelStyle ??
