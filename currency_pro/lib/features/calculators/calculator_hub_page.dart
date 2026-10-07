@@ -4,6 +4,7 @@ import '../../core/ads/native_ad_card.dart';
 import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/widgets/app_drawer.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 import '../../routes.dart';
 
@@ -58,7 +59,7 @@ class CalculatorHubPage extends StatelessWidget {
 
     return Scaffold(
       drawer: const AppDrawer(current: Routes.calculators),
-      appBar: AppBar(title: Text(l10n.calculators)),
+      appBar: AppBar(title: ScreenTitle(l10n.calculators)),
       body: ListView.separated(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         itemCount: entries.length + 1,
