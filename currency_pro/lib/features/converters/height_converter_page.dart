@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 
 /// Feet + inches ↔ centimetres, the way people actually quote height.
@@ -54,10 +56,11 @@ class _HeightConverterPageState extends State<HeightConverterPage> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final double cm = Fmt.parse(_cm.text) ?? 0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('HEIGHT CONVERTER')),
+      appBar: AppBar(title: ScreenTitle(l10n.heightConverter)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
@@ -65,7 +68,7 @@ class _HeightConverterPageState extends State<HeightConverterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const FieldLabel('Feet & inches', width: 160),
+                FieldLabel(l10n.feetInches, width: 160),
                 const SizedBox(height: 10),
                 Row(
                   children: <Widget>[
@@ -75,10 +78,10 @@ class _HeightConverterPageState extends State<HeightConverterPage> {
                         keyboardType: TextInputType.number,
                         onChanged: (_) => _fromImperial(),
                         decoration: InputDecoration(
-                          labelText: 'Feet',
+                          labelText: l10n.feet,
                           suffixText: 'ft',
                           suffixIcon: IconButton(
-                            tooltip: 'Clear',
+                            tooltip: l10n.clearTooltip,
                             icon: const Icon(Icons.cancel_rounded, size: 18),
                             onPressed: () {
                               _feet.text = '0';
@@ -96,10 +99,10 @@ class _HeightConverterPageState extends State<HeightConverterPage> {
                             decimal: true),
                         onChanged: (_) => _fromImperial(),
                         decoration: InputDecoration(
-                          labelText: 'Inches',
+                          labelText: l10n.inchesLabel,
                           suffixText: 'in',
                           suffixIcon: IconButton(
-                            tooltip: 'Clear',
+                            tooltip: l10n.clearTooltip,
                             icon: const Icon(Icons.cancel_rounded, size: 18),
                             onPressed: () {
                               _inches.text = '0';
@@ -119,7 +122,7 @@ class _HeightConverterPageState extends State<HeightConverterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const FieldLabel('Metric', width: 160),
+                FieldLabel(l10n.metric, width: 160),
                 const SizedBox(height: 10),
                 TextField(
                   controller: _cm,
@@ -127,10 +130,10 @@ class _HeightConverterPageState extends State<HeightConverterPage> {
                       const TextInputType.numberWithOptions(decimal: true),
                   onChanged: (_) => _fromMetric(),
                   decoration: InputDecoration(
-                    labelText: 'Centimetres',
+                    labelText: l10n.centimetres,
                     suffixText: 'cm',
                     suffixIcon: IconButton(
-                      tooltip: 'Clear',
+                      tooltip: l10n.clearTooltip,
                       icon: const Icon(Icons.cancel_rounded, size: 18),
                       onPressed: () {
                         _cm.text = '0';
@@ -148,20 +151,20 @@ class _HeightConverterPageState extends State<HeightConverterPage> {
             borderColor: p.primary.withOpacity(0.5),
             child: Column(
               children: <Widget>[
-                _row(p, 'Metres', '${Fmt.smart(cm / 100, maxDecimals: 3)} m'),
+                _row(p, l10n.metres, '${Fmt.smart(cm / 100, maxDecimals: 3)} m'),
                 const SizedBox(height: 8),
-                _row(p, 'Millimetres', '${Fmt.smart(cm * 10)} mm'),
+                _row(p, l10n.millimetres, '${Fmt.smart(cm * 10)} mm'),
                 const SizedBox(height: 8),
-                _row(p, 'Total inches',
+                _row(p, l10n.totalInches,
                     '${Fmt.smart(cm / 2.54, maxDecimals: 2)} in'),
                 const SizedBox(height: 8),
-                _row(p, 'Hands (horses)',
+                _row(p, l10n.handsHorses,
                     '${Fmt.smart(cm / 10.16, maxDecimals: 2)} hh'),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          SectionLabel('Quick reference'),
+          SectionLabel(l10n.quickReference),
           SectionCard(
             padding: EdgeInsets.zero,
             child: Column(
