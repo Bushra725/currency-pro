@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
 import '../../core/widgets/app_drawer.dart';
+import '../../core/widgets/app_dropdown.dart';
 import '../../core/widgets/flag_avatar.dart';
 import '../../core/widgets/rate_app_bar.dart';
 import '../../core/widgets/section_card.dart';
@@ -76,10 +78,11 @@ class _MetalsPageState extends State<MetalsPage>
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
 
     return Scaffold(
       drawer: const AppDrawer(current: Routes.assets),
-      appBar: RateAppBar(title: 'Dollar, Bitcoin, Gold, Silver'),
+      appBar: RateAppBar(title: l10n.metalCrypto),
       body: Column(
         children: <Widget>[
           const OfflineBanner(),
@@ -103,10 +106,10 @@ class _MetalsPageState extends State<MetalsPage>
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,
               ),
-              tabs: const <Widget>[
-                Tab(height: 38, text: 'Price'),
-                Tab(height: 38, text: 'Cross Rate'),
-                Tab(height: 38, text: 'My Assets'),
+              tabs: <Widget>[
+                Tab(height: 38, text: l10n.tabPrice),
+                Tab(height: 38, text: l10n.tabCross),
+                Tab(height: 38, text: l10n.tabAssets),
               ],
             ),
           ),
@@ -128,6 +131,7 @@ class _MetalsPageState extends State<MetalsPage>
   // -- Price --------------------------------------------------------------
 
   Widget _priceTab(AppPalette p) {
+    final L10n l10n = L10n.of(context);
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
     final Currency base = CurrencyLookup.of(settings.baseCode);
@@ -141,13 +145,13 @@ class _MetalsPageState extends State<MetalsPage>
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  const FieldLabel('Base Currency', width: 104),
+                  FieldLabel(l10n.baseCurrency, width: 104),
                   Expanded(
                     child: InkWell(
                       onTap: () async {
                         final Currency? picked = await CurrencyPicker.show(
                           context,
-                          title: 'Base currency',
+                          title: L10n.read(context).baseCurrency,
                         );
                         if (picked != null) {
                           await settings.setBaseCode(picked.code);
@@ -176,22 +180,17 @@ class _MetalsPageState extends State<MetalsPage>
               const SizedBox(height: 10),
               Row(
                 children: <Widget>[
-                  const FieldLabel('Metal unit', width: 104),
+                  FieldLabel(l10n.metalUnit, width: 104),
                   Expanded(
                     child: Align(
                       alignment: Alignment.centerRight,
-                      child: DropdownButton<String>(
+                      child: AppDropdown<String>(
                         value: _unit,
-                        underline: const SizedBox.shrink(),
-                        borderRadius: BorderRadius.circular(12),
-                        items: _weightUnits.keys
-                            .map((String u) => DropdownMenuItem<String>(
-                                  value: u,
-                                  child: Text(u),
-                                ))
-                            .toList(),
-                        onChanged: (String? v) =>
-                            setState(() => _unit = v ?? 'oz t'),
+                        entries: _weightUnits.keys
+                            .map((String u) =>
+                                AppDropdownEntry<String>(value: u, label: u))
+                            .toList(growable: false),
+                        onChanged: (String v) => setState(() => _unit = v),
                       ),
                     ),
                   ),
@@ -214,6 +213,7 @@ class _MetalsPageState extends State<MetalsPage>
     Currency base,
     String code,
   ) {
+    final L10n l10n = L10n.of(context);
     final Currency asset = CurrencyLookup.of(code);
     final double? perUnitInBase = rates.convert(1, code, base.code);
     final double? change = rates.assetChange24h(code);
@@ -260,14 +260,14 @@ class _MetalsPageState extends State<MetalsPage>
                   const SizedBox(height: 6),
                   Text(
                     asset.isMetal
-                        ? 'Price per $_unit'
-                        : '1 ${asset.code} =',
+                        ? l10n.pricePer(_unit)
+                        : l10n.oneCode(asset.code),
                     style: TextStyle(fontSize: 10.5, color: p.textSecondary),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     shown == null
-                        ? 'unavailable'
+                        ? l10n.unavailable
                         : '${settings.format(shown, decimals: shown < 10 ? 4 : 2)} '
                             '${base.code}',
                     style: TextStyle(
@@ -289,7 +289,7 @@ class _MetalsPageState extends State<MetalsPage>
                             color: change >= 0 ? p.up : p.down,
                           ),
                           Text(
-                            '${Fmt.percent(change, decimals: 2)} · 24h',
+                            '${Fmt.percent(change, decimals: 2)} · ${l10n.window24h}',
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
@@ -303,7 +303,7 @@ class _MetalsPageState extends State<MetalsPage>
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        'Spot source: tokenised metal quote (1 token = 1 troy oz)',
+                        l10n.spotSource,
                         style:
                             TextStyle(fontSize: 9.5, color: p.textSecondary),
                       ),
@@ -401,6 +401,7 @@ class _MetalsPageState extends State<MetalsPage>
   // -- My assets ----------------------------------------------------------
 
   Widget _assetsTab(AppPalette p) {
+    final L10n l10n = L10n.of(context);
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
     final Currency base = CurrencyLookup.of(settings.baseCode);
@@ -421,7 +422,7 @@ class _MetalsPageState extends State<MetalsPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                'Portfolio value',
+                l10n.portfolioValue,
                 style: TextStyle(fontSize: 11.5, color: p.textSecondary),
               ),
               const SizedBox(height: 4),
@@ -438,11 +439,10 @@ class _MetalsPageState extends State<MetalsPage>
         ),
         const SizedBox(height: 12),
         if (_holdings.isEmpty)
-          const EmptyState(
+          EmptyState(
             icon: Icons.account_balance_wallet_outlined,
-            title: 'No holdings yet',
-            message: 'Add the currencies, coins or metals you own to track '
-                'their combined value.',
+            title: l10n.noHoldingsTitle,
+            message: l10n.noHoldingsBody,
           )
         else
           ..._holdings.entries.map((MapEntry<String, double> entry) {
@@ -505,16 +505,17 @@ class _MetalsPageState extends State<MetalsPage>
         OutlinedButton.icon(
           onPressed: _addHolding,
           icon: const Icon(Icons.add, size: 18),
-          label: const Text('ADD HOLDING'),
+          label: Text(l10n.addHolding),
         ),
       ],
     );
   }
 
   Future<void> _addHolding() async {
+    final L10n l10n = L10n.read(context);
     final Currency? picked = await CurrencyPicker.show(
       context,
-      title: 'What do you hold?',
+      title: l10n.whatDoYouHold,
     );
     if (picked == null || !mounted) return;
 
@@ -524,28 +525,33 @@ class _MetalsPageState extends State<MetalsPage>
 
     final double? qty = await showDialog<double>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text('Amount of ${picked.code}'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            hintText: picked.isMetal ? 'Troy ounces' : 'Quantity',
+      builder: (BuildContext dialogContext) {
+        final L10n dialogL10n = L10n.read(dialogContext);
+        return AlertDialog(
+          title: Text(dialogL10n.amountOf(picked.code)),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              hintText: picked.isMetal
+                  ? dialogL10n.troyOunces
+                  : dialogL10n.quantity,
+            ),
           ),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('CANCEL'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.of(context).pop(Fmt.parse(controller.text)),
-            child: const Text('SAVE'),
-          ),
-        ],
-      ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(dialogL10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(Fmt.parse(controller.text)),
+              child: Text(dialogL10n.save),
+            ),
+          ],
+        );
+      },
     );
 
     controller.dispose();
