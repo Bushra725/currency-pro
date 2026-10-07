@@ -6,6 +6,7 @@ import '../l10n/l10n.dart';
 import '../theme/app_palette.dart';
 import '../utils/formatting.dart';
 import 'brand_logo.dart';
+import 'screen_title.dart';
 
 /// App bar used on the rate-driven screens: a title plus the
 /// "Updated: 22 Sept 2026 14:01" line from the reference app.
@@ -43,7 +44,9 @@ class RateAppBar extends StatelessWidget implements PreferredSizeWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(
+                // Shrinks rather than truncates, so even a long translated
+                // screen name stays fully readable next to the actions.
+                ScreenTitle(
                   title.toUpperCase(),
                   style: TextStyle(
                     fontSize: 14.5,
