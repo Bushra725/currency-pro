@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/l10n/l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/utils/formatting.dart';
+import '../../core/widgets/screen_title.dart';
 import '../../core/widgets/section_card.dart';
 import '../../data/currency_lookup.dart';
 import '../../data/models/currency.dart';
@@ -42,6 +44,7 @@ class _DiscountCalculatorPageState extends State<DiscountCalculatorPage> {
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
+    final L10n l10n = L10n.of(context);
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
 
@@ -59,14 +62,14 @@ class _DiscountCalculatorPageState extends State<DiscountCalculatorPage> {
         rates.convert(finalPrice, local.code, home.code);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('DISCOUNT CALCULATOR')),
+      appBar: AppBar(title: ScreenTitle(l10n.discountCalculator)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
           SectionCard(
             child: Row(
               children: <Widget>[
-                const FieldLabel('Original price', width: 116),
+                FieldLabel(l10n.originalPrice, width: 116),
                 Expanded(
                   child: TextField(
                     controller: _price,
@@ -109,15 +112,15 @@ class _DiscountCalculatorPageState extends State<DiscountCalculatorPage> {
             ),
           ),
           const SizedBox(height: 12),
-          _sliderCard(p, 'Discount', _discount, 90,
+          _sliderCard(p, l10n.discount, _discount, 90,
               (double v) => setState(() => _discount = v),
               presets: const <double>[5, 10, 15, 20, 25, 30, 40, 50, 70]),
           const SizedBox(height: 12),
-          _sliderCard(p, 'Extra discount', _secondDiscount, 90,
+          _sliderCard(p, l10n.extraDiscount, _secondDiscount, 90,
               (double v) => setState(() => _secondDiscount = v),
-              hint: 'Stacked on the already reduced price'),
+              hint: l10n.stackedOnPrice),
           const SizedBox(height: 12),
-          _sliderCard(p, 'Tax / VAT', _tax, 30,
+          _sliderCard(p, l10n.taxVat, _tax, 30,
               (double v) => setState(() => _tax = v),
               presets: const <double>[0, 5, 7.5, 10, 15, 17, 20]),
           const SizedBox(height: 12),
@@ -127,7 +130,7 @@ class _DiscountCalculatorPageState extends State<DiscountCalculatorPage> {
             child: Column(
               children: <Widget>[
                 Text(
-                  'You pay',
+                  l10n.youPay,
                   style: TextStyle(fontSize: 12, color: p.textSecondary),
                 ),
                 const SizedBox(height: 4),
@@ -146,25 +149,25 @@ class _DiscountCalculatorPageState extends State<DiscountCalculatorPage> {
                         TextStyle(fontSize: 12, color: p.textSecondary),
                   ),
                 Divider(height: 22, color: p.outline),
-                _row(p, 'Price after discount',
+                _row(p, l10n.priceAfterDiscount,
                     '${settings.format(afterSecond)} ${local.code}'),
                 const SizedBox(height: 8),
-                _row(p, 'You save',
+                _row(p, l10n.youSave,
                     '${settings.format(saved)} ${local.code}',
                     color: p.up),
                 const SizedBox(height: 8),
-                _row(p, 'Effective discount',
+                _row(p, l10n.effectiveDiscount,
                     '${effective.toStringAsFixed(1)} %'),
                 if (_tax > 0) ...<Widget>[
                   const SizedBox(height: 8),
-                  _row(p, 'Tax added',
+                  _row(p, l10n.taxAdded,
                       '${settings.format(tax)} ${local.code}'),
                 ],
               ],
             ),
           ),
           const SizedBox(height: 14),
-          SectionLabel('Common discounts on this price'),
+          SectionLabel(l10n.commonDiscounts),
           SectionCard(
             padding: EdgeInsets.zero,
             child: Column(
@@ -194,7 +197,7 @@ class _DiscountCalculatorPageState extends State<DiscountCalculatorPage> {
                       ),
                       Expanded(
                         child: Text(
-                          'save ${settings.format(price - value)}',
+                          l10n.saveAmount(settings.format(price - value)),
                           style: TextStyle(
                               fontSize: 11.5, color: p.textSecondary),
                         ),
