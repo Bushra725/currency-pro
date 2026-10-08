@@ -4,6 +4,7 @@ import 'package:currency_pro/core/theme/app_palette.dart';
 import 'package:currency_pro/core/theme/app_theme.dart';
 import 'package:currency_pro/core/utils/haptics.dart';
 import 'package:currency_pro/core/widgets/app_drawer.dart';
+import 'package:currency_pro/core/widgets/brand_logo.dart';
 import 'package:currency_pro/core/widgets/app_dropdown.dart';
 import 'package:currency_pro/core/widgets/calc_keypad.dart';
 import 'package:currency_pro/core/widgets/rate_app_bar.dart';
@@ -12,7 +13,11 @@ import 'package:currency_pro/core/widgets/trend_chart.dart';
 import 'package:currency_pro/data/models/rate_snapshot.dart';
 import 'package:currency_pro/data/repositories/rates_repository.dart';
 import 'package:currency_pro/data/services/prefs_service.dart';
+import 'package:currency_pro/features/alerts/rate_alert_page.dart';
+import 'package:currency_pro/features/travel/travel_budget_page.dart';
+import 'package:currency_pro/state/trips_provider.dart';
 import 'package:currency_pro/features/currency/metals_page.dart';
+import 'package:currency_pro/state/alerts_provider.dart';
 import 'package:currency_pro/features/currency/multi_currency_page.dart';
 import 'package:currency_pro/routes.dart';
 import 'package:currency_pro/state/rates_provider.dart';
@@ -241,6 +246,38 @@ void main() {
     expect(unit, 'kg');
   });
 
+  testWidgets('a one-letter unit keeps the standard dropdown width',
+      (WidgetTester tester) async {
+    const List<AppDropdownEntry<String>> units = <AppDropdownEntry<String>>[
+      AppDropdownEntry<String>(value: 'oz t', label: 'oz t'),
+      AppDropdownEntry<String>(value: 'g', label: 'g'),
+      AppDropdownEntry<String>(value: 'kg', label: 'kg'),
+      AppDropdownEntry<String>(value: 'tola', label: 'tola'),
+    ];
+
+    Future<double> widthOf(String unit) async {
+      await tester.pumpWidget(_app(
+        null,
+        home: Scaffold(
+          body: Center(
+            child: AppDropdown<String>(
+              value: unit,
+              entries: units,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      ));
+      return tester.getSize(find.byType(AppDropdown<String>)).width;
+    }
+
+    final double grams = await widthOf('g');
+    final double troy = await widthOf('oz t');
+    final double tola = await widthOf('tola');
+    expect(grams, closeTo(troy, 0.5));
+    expect(grams, closeTo(tola, 0.5));
+  });
+
   testWidgets('metal unit menu stays under the selector for the last unit',
       (WidgetTester tester) async {
     final _Boot boot = await _boot();
@@ -253,13 +290,13 @@ void main() {
     await tester.pump();
 
     expect(find.byType(DropdownButton<String>), findsNothing);
-    expect(find.byType(AppDropdown<String>), findsOneWidget);
+    expect(find.byKey(const Key('price-metal-unit')), findsOneWidget);
 
     final double fromDefault = await _menuOffset(tester);
     await tester.tapAt(const Offset(8, 8));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(AppDropdown<String>));
+    await tester.tap(find.byKey(const Key('price-metal-unit')));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'tola'));
     await tester.pumpAndSettle();
@@ -369,7 +406,7 @@ void main() {
     }
   });
 
-  testWidgets('real-time and multi titles stay large on a phone',
+  testWidgets('screen titles are the name only, with no brand icon',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(720, 1600);
     tester.view.devicePixelRatio = 2;
@@ -379,73 +416,30 @@ void main() {
     final _Boot boot = await _boot();
     final RatesProvider rates = _rates(boot.prefs);
 
-    Future<double> titleScale(String title, List<Widget> actions) async {
+    Future<void> expectNameOnly(String title) async {
       await tester.pumpWidget(_app(
         boot.settings,
         prefs: boot.prefs,
         rates: rates,
         home: Scaffold(
-          appBar: RateAppBar(
-            title: title,
-            showLogo: false,
-            uppercase: false,
-            titleMaxLines: title == 'Real-Time Currency' ? 1 : 2,
-            titleFontSize: title == 'Real-Time Currency' ? 17 : 16.5,
-            titleLetterSpacing: 0.15,
-            actions: actions,
-          ),
+          appBar: RateAppBar(title: title),
         ),
       ));
       await tester.pump();
-      final String shown = title;
-      final Finder text = find.text(shown);
-      final Finder fitted = find.ancestor(
-        of: text,
-        matching: find.byType(FittedBox),
-      );
-      if (fitted.evaluate().isEmpty) return 1;
-      final RenderBox box = tester.renderObject<RenderBox>(fitted.first);
-      final RenderBox glyphs = tester.renderObject<RenderBox>(text);
-      return box.size.width / glyphs.size.width;
+      expect(find.byType(BrandLogo), findsNothing);
+      final String shown = title.toUpperCase();
+      final Text text = tester.widget<Text>(find.text(shown));
+      final RenderParagraph paragraph =
+          tester.renderObject<RenderParagraph>(find.text(shown));
+      expect(text.style?.fontSize, 16);
+      expect(text.maxLines, 1);
+      expect(paragraph.didExceedMaxLines, isFalse);
+      expect(tester.takeException(), isNull);
     }
 
-    final double realTime = await titleScale(
-      'Real-Time Currency',
-      <Widget>[
-        IconButton(
-          onPressed: () {},
-          visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          icon: const Icon(Icons.grid_view_rounded),
-        ),
-        IconButton(
-          onPressed: () {},
-          visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          icon: const Icon(Icons.more_vert),
-        ),
-      ],
-    );
-    final double multi = await titleScale(
-      'Multi Currency Converter',
-      <Widget>[
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.flag_outlined),
-        ),
-      ],
-    );
-
-    // 0.80 of 17px is about 14px, in line with the other screen titles.
-    expect(realTime, greaterThan(0.80));
-    expect(multi, greaterThan(0.95));
-    expect(
-      tester.renderObject<RenderParagraph>(find.text('Multi Currency Converter')).didExceedMaxLines,
-      isFalse,
-    );
-    expect(tester.takeException(), isNull);
+    await expectNameOnly('Real-Time Currency');
+    await expectNameOnly('Multi Currency Converter');
+    await expectNameOnly('Trend Charts');
   });
 
   testWidgets('multi currency count uses a flag, not a copy icon',
@@ -482,11 +476,341 @@ void main() {
     );
   });
 
+  testWidgets('price tab can add a currency beyond the defaults',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final _Boot boot = await _boot();
+    final RatesProvider rates = _rates(boot.prefs);
+
+    Future<void> openPrices() async {
+      await tester.pumpWidget(_app(
+        boot.settings,
+        prefs: boot.prefs,
+        rates: rates,
+        home: const MetalsPage(),
+      ));
+      await tester.pump();
+    }
+
+    await openPrices();
+    expect(find.text('U.S. Dollar'), findsOneWidget);
+    expect(find.text('Bitcoin'), findsOneWidget);
+    expect(find.text('Gold (troy ounce)'), findsOneWidget);
+    expect(find.text('Silver (troy ounce)'), findsOneWidget);
+    expect(find.text('Euro'), findsNothing);
+
+    await tester.ensureVisible(find.byKey(const Key('price-add-currency')));
+    await tester.tap(find.byKey(const Key('price-add-currency')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Euro');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('EUR'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Euro'), findsOneWidget);
+    expect(boot.prefs.getStringList('price_currencies'), <String>['EUR']);
+
+    await openPrices();
+    await tester.ensureVisible(find.text('Euro'));
+    expect(find.text('Euro'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    expect(find.text('Euro'), findsNothing);
+    expect(boot.prefs.getStringList('price_currencies'), isEmpty);
+  });
+
+  testWidgets('cross rate can add a currency, set the base, and show key points',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final _Boot boot = await _boot();
+    await tester.pumpWidget(_app(
+      boot.settings,
+      prefs: boot.prefs,
+      rates: _rates(boot.prefs),
+      home: const MetalsPage(),
+    ));
+    await tester.pump();
+
+    await tester.tap(find.widgetWithText(Tab, 'Cross rate'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Key points'), findsOneWidget);
+    expect(find.byKey(const Key('cross-base')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('cross-row-USD')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('key-point-EUR')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('key-point-USD')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('cross-add-currency')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'GBP');
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(
+      of: find.byType(DraggableScrollableSheet),
+      matching: find.byWidgetPredicate(
+        (Widget widget) => widget is Text && widget.data == 'GBP',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey<String>('cross-row-GBP')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('key-point-GBP')), findsOneWidget);
+    expect(boot.prefs.getStringList('cross_currencies'), <String>['GBP']);
+
+    await tester.tap(find.byKey(const Key('cross-base')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'GBP');
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(
+      of: find.byType(DraggableScrollableSheet),
+      matching: find.byWidgetPredicate(
+        (Widget widget) => widget is Text && widget.data == 'GBP',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final List<Text> rows = tester
+        .widgetList<Text>(find.byWidgetPredicate((Widget widget) {
+          final Key? key = widget.key;
+          return key is ValueKey<String> && key.value.startsWith('cross-row-');
+        }))
+        .toList();
+    expect(rows.first.data, 'GBP');
+    expect(find.byKey(const ValueKey<String>('key-point-GBP')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('key-point-USD')), findsOneWidget);
+    expect(boot.prefs.getString('cross_base'), 'GBP');
+  });
+
+  testWidgets('assets and price share the base currency and each metal unit',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      PrefsService.kDefaultThemeV2: true,
+      PrefsService.kDefaultThemeV3: true,
+      PrefsService.kFeedbackDefaultsV2: true,
+      PrefsService.kOnboardingDone: true,
+      'my_assets': '{"XAU":1,"USD":10}',
+    });
+    final _Boot boot = await _boot();
+    await tester.pumpWidget(_app(
+      boot.settings,
+      prefs: boot.prefs,
+      rates: _rates(boot.prefs),
+      home: const MetalsPage(),
+    ));
+    await tester.pump();
+
+    await tester.tap(find.widgetWithText(Tab, 'My assets'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('assets-base')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('asset-unit-XAU')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('assets-base')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Euro');
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(
+      of: find.byType(DraggableScrollableSheet),
+      matching: find.byWidgetPredicate(
+        (Widget widget) => widget is Text && widget.data == 'EUR',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(Tab, 'Price'));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('price-base')),
+        matching: find.text('EUR'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.widgetWithText(Tab, 'My assets'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('asset-unit-XAU')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'g'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(Tab, 'Price'));
+    await tester.pumpAndSettle();
+    expect(find.text('Price per g'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('price-metal-unit')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'tola'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(Tab, 'My assets'));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('asset-unit-XAU')),
+        matching: find.text('tola'),
+      ),
+      findsOneWidget,
+    );
+    expect(boot.prefs.getString('metal_unit'), 'tola');
+  });
+
+  testWidgets('a rate alert can be set from a rise or fall percentage',
+      (WidgetTester tester) async {
+    final _Boot boot = await _boot();
+    final RateSnapshot snapshot = RateSnapshot(
+      base: 'USD',
+      rates: const <String, double>{'USD': 1, 'EUR': 0.9},
+      fetchedAt: DateTime(2026, 10, 8),
+      providerUpdatedAt: DateTime(2026, 10, 8),
+    );
+    await boot.prefs.setString(PrefsService.kRateSnapshot, snapshot.encode());
+    final RatesProvider rates = _rates(boot.prefs);
+    final AlertsProvider alerts = AlertsProvider(boot.prefs);
+
+    await tester.pumpWidget(_app(
+      boot.settings,
+      prefs: boot.prefs,
+      rates: rates,
+      alerts: alerts,
+      home: const RateAlertPage(),
+    ));
+    await tester.pump();
+
+    await tester.tap(find.text('Add new alert'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Percentage change'), findsWidgets);
+    expect(find.text('5%'), findsOneWidget);
+
+    String targetText() {
+      final List<TextField> fields =
+          tester.widgetList<TextField>(find.byType(TextField)).toList();
+      return fields.last.controller!.text;
+    }
+
+    expect(targetText(), '0.945');
+
+    await tester.tap(find.text('10%'));
+    await tester.pumpAndSettle();
+    expect(targetText(), '0.99');
+
+    await tester.tap(find.text('Falls to'));
+    await tester.pumpAndSettle();
+    expect(targetText(), '0.81');
+  });
+
+  testWidgets('a trip budget is entered in the destination currency',
+      (WidgetTester tester) async {
+    final _Boot boot = await _boot();
+    final RateSnapshot snapshot = RateSnapshot(
+      base: 'USD',
+      rates: const <String, double>{'USD': 1, 'EUR': 0.9},
+      fetchedAt: DateTime(2026, 10, 8),
+      providerUpdatedAt: DateTime(2026, 10, 8),
+    );
+    await boot.prefs.setString(PrefsService.kRateSnapshot, snapshot.encode());
+    final RatesProvider rates = _rates(boot.prefs);
+    final TripsProvider trips = TripsProvider(boot.prefs);
+
+    await tester.pumpWidget(_app(
+      boot.settings,
+      prefs: boot.prefs,
+      rates: rates,
+      trips: trips,
+      home: const TravelBudgetPage(),
+    ));
+    await tester.pump();
+
+    await tester.tap(find.text('ADD NEW TRIP'));
+    await tester.pumpAndSettle();
+
+    final TextField budget =
+        tester.widget<TextField>(find.byKey(const Key('trip-budget')));
+    expect(budget.decoration!.suffixText, 'EUR');
+    expect(find.text('About 1,111.11 USD at home'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('trip-budget')), '100');
+    await tester.pumpAndSettle();
+    expect(find.text('About 111.11 USD at home'), findsOneWidget);
+
+    await tester.tap(find.text('CREATE TRIP'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('100.00 EUR'), findsWidgets);
+    expect(find.text('0.00 EUR'), findsOneWidget);
+    expect(find.text('≈ 0.00 USD'), findsOneWidget);
+    expect(find.text('≈ 111.11 USD'), findsOneWidget);
+
+    await tester.tap(find.text('EXPENSE'));
+    await tester.pumpAndSettle();
+    final Finder expenseAmount = find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is TextField && widget.decoration?.labelText == 'Amount',
+    );
+    expect(
+      tester.widget<TextField>(expenseAmount).decoration!.suffixText,
+      'EUR',
+    );
+    await tester.enterText(expenseAmount, '40');
+    await tester.enterText(find.byKey(const Key('expense-note')), 'Airport taxi');
+    expect(find.byKey(const Key('expense-date')), findsOneWidget);
+    await tester.ensureVisible(find.text('SAVE EXPENSE'));
+    await tester.tap(find.text('SAVE EXPENSE'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('40.00 EUR'), findsOneWidget);
+    expect(find.text('≈ 44.44 USD'), findsOneWidget);
+    expect(find.text('60.00 EUR'), findsOneWidget);
+    expect(find.text('≈ 66.67 USD'), findsOneWidget);
+
+    await tester.tap(find.text('Spending overview'));
+    await tester.pumpAndSettle();
+    expect(find.text('Daily spending'), findsOneWidget);
+    expect(find.text('Per day'), findsOneWidget);
+    expect(find.textContaining('Airport taxi'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit expense'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('expense-amount')), '25');
+    await tester.enterText(
+      find.byKey(const Key('expense-note')),
+      'Airport taxi, tip',
+    );
+    await tester.ensureVisible(find.text('SAVE EXPENSE'));
+    await tester.tap(find.text('SAVE EXPENSE'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Airport taxi, tip'), findsOneWidget);
+    expect(find.text('25.00 EUR'), findsWidgets);
+    expect(find.text('75.00 EUR'), findsOneWidget);
+
+    tester.state<NavigatorState>(find.byType(Navigator)).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    expect(find.text('Export CSV'), findsOneWidget);
+  });
+
   testWidgets('a failed chart shows the friendly message and nothing technical',
       (WidgetTester tester) async {
     final _Boot boot = await _boot();
     const String friendly =
-        'Unable to load the chart. Please check your internet connection and try again.';
+        'Check your internet connection';
     expect(L10n('en').chartLoadFailed, friendly);
 
     await tester.pumpWidget(_app(
@@ -494,7 +818,9 @@ void main() {
       home: const Scaffold(body: TrendChart(points: <RatePoint>[])),
     ));
 
-    expect(find.text(friendly), findsOneWidget);
+    // An empty series is missing history, not a dropped connection.
+    expect(find.text(L10n('en').chartNoHistory), findsOneWidget);
+    expect(find.text(friendly), findsNothing);
     expect(find.textContaining('http'), findsNothing);
     expect(find.textContaining('ClientException'), findsNothing);
     expect(find.textContaining('frankfurter'), findsNothing);
@@ -524,6 +850,8 @@ Widget _app(
   SettingsProvider? settings, {
   PrefsService? prefs,
   RatesProvider? rates,
+  AlertsProvider? alerts,
+  TripsProvider? trips,
   required Widget home,
 }) {
   final AppPalette palette = settings?.palette ?? kFallbackPalette;
@@ -537,6 +865,8 @@ Widget _app(
       ChangeNotifierProvider<SettingsProvider>.value(value: settings),
     if (prefs != null) Provider<PrefsService>.value(value: prefs),
     if (rates != null) ChangeNotifierProvider<RatesProvider>.value(value: rates),
+    if (alerts != null) ChangeNotifierProvider<AlertsProvider>.value(value: alerts),
+    if (trips != null) ChangeNotifierProvider<TripsProvider>.value(value: trips),
   ];
   if (providers.isEmpty) return app;
   return MultiProvider(providers: providers, child: app);
@@ -597,10 +927,10 @@ class _OpenDrawer extends StatelessWidget {
 }
 
 Future<double> _menuOffset(WidgetTester tester) async {
-  await tester.tap(find.byType(AppDropdown<String>));
+  final Finder dropdown = find.byKey(const Key('price-metal-unit'));
+  await tester.tap(dropdown);
   await tester.pumpAndSettle();
-  final double buttonBottom =
-      tester.getBottomLeft(find.byType(AppDropdown<String>)).dy;
+  final double buttonBottom = tester.getBottomLeft(dropdown).dy;
   final double firstItemTop =
       tester.getTopLeft(find.byType(PopupMenuItem<String>).first).dy;
   return firstItemTop - buttonBottom;

@@ -51,6 +51,16 @@ class TripsProvider extends ChangeNotifier {
     await _save();
   }
 
+  Future<void> updateExpense(String tripId, Expense expense) async {
+    final Trip? trip = byId(tripId);
+    if (trip == null) return;
+    trip.expenses = trip.expenses
+        .map((Expense e) => e.id == expense.id ? expense : e)
+        .toList();
+    notifyListeners();
+    await _save();
+  }
+
   Future<void> removeExpense(String tripId, String expenseId) async {
     final Trip? trip = byId(tripId);
     if (trip == null) return;

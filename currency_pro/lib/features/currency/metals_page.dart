@@ -30,6 +30,29 @@ class MetalsPage extends StatefulWidget {
 class _MetalsPageState extends State<MetalsPage>
     with SingleTickerProviderStateMixin {
   static const String _assetsKey = 'my_assets';
+  static const String _pricesKey = 'price_currencies';
+  static const String _crossKey = 'cross_currencies';
+  static const String _crossBaseKey = 'cross_base';
+  static const String _metalUnitsKey = 'metal_units';
+  static const String _metalUnitKey = 'metal_unit';
+  static const double _troyOzGrams = 31.1034768;
+
+  /// Cards always shown on the Price tab. Anything else is chosen by the user.
+  static const List<String> _defaultPrices = <String>[
+    'USD',
+    'BTC',
+    'XAU',
+    'XAG',
+    'ETH',
+  ];
+
+  static const List<String> _defaultCross = <String>[
+    'USD',
+    'EUR',
+    'BTC',
+    'XAU',
+    'XAG',
+  ];
 
   /// Weight units offered for the metal cards, expressed in grams.
   static const Map<String, double> _weightUnits = <String, double>{
@@ -41,12 +64,26 @@ class _MetalsPageState extends State<MetalsPage>
 
   late final TabController _tabs = TabController(length: 3, vsync: this);
   String _unit = 'oz t';
+  Map<String, String> _metalUnits = <String, String>{};
   Map<String, double> _holdings = <String, double>{};
+  List<String> _extraPrices = <String>[];
+  List<String> _extraCross = <String>[];
+  String _crossBase = 'USD';
 
   @override
   void initState() {
     super.initState();
     final PrefsService prefs = context.read<PrefsService>();
+    _extraPrices = _savedCodes(prefs.getStringList(_pricesKey), _defaultPrices);
+    _extraCross = _savedCodes(prefs.getStringList(_crossKey), _defaultCross);
+    final String savedBase =
+        (prefs.getString(_crossBaseKey) ?? 'USD').toUpperCase();
+    _crossBase = CurrencyLookup.exists(savedBase) ? savedBase : 'USD';
+    final String? savedUnit = prefs.getString(_metalUnitKey);
+    if (savedUnit != null && _weightUnits.containsKey(savedUnit)) {
+      _unit = savedUnit;
+    }
+    _metalUnits = _savedMetalUnits(prefs.getString(_metalUnitsKey));
     final String? raw = prefs.getString(_assetsKey);
     if (raw != null && raw.isNotEmpty) {
       try {
@@ -66,6 +103,102 @@ class _MetalsPageState extends State<MetalsPage>
   void dispose() {
     _tabs.dispose();
     super.dispose();
+  }
+
+  List<String> _savedCodes(List<String> stored, List<String> defaults) {
+    final List<String> loaded = <String>[];
+    final Set<String> seen = <String>{};
+    for (final String raw in stored) {
+      final String code = raw.toUpperCase();
+      if (!CurrencyLookup.exists(code) || defaults.contains(code)) {
+        continue;
+      }
+      if (seen.add(code)) loaded.add(code);
+    }
+    return loaded;
+  }
+
+  List<String> get _priceCodes => <String>[..._defaultPrices, ..._extraPrices];
+
+  /// Base currency first, then the built-in set, then currencies the user added.
+  List<String> get _crossCodes {
+    final List<String> codes = <String>[
+      ..._defaultCross,
+      ..._extraCross.where((String c) => !_defaultCross.contains(c)),
+    ];
+    if (!codes.contains(_crossBase) && CurrencyLookup.exists(_crossBase)) {
+      codes.add(_crossBase);
+    }
+    if (codes.contains(_crossBase)) {
+      codes.remove(_crossBase);
+      codes.insert(0, _crossBase);
+    }
+    return codes;
+  }
+
+  Future<void> _savePrices() async {
+    await context.read<PrefsService>().setStringList(_pricesKey, _extraPrices);
+  }
+
+  Map<String, String> _savedMetalUnits(String? raw) {
+    if (raw == null || raw.isEmpty) return <String, String>{};
+    try {
+      final Map<String, dynamic> decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map((String code, dynamic unit) {
+        final String value = unit.toString();
+        return MapEntry<String, String>(
+          code.toUpperCase(),
+          _weightUnits.containsKey(value) ? value : 'oz t',
+        );
+      });
+    } catch (_) {
+      return <String, String>{};
+    }
+  }
+
+  String _unitFor(String code) {
+    final String unit = _metalUnits[code] ?? _unit;
+    return _weightUnits.containsKey(unit) ? unit : 'oz t';
+  }
+
+  double _gramsOf(String unit) => _weightUnits[unit] ?? _troyOzGrams;
+
+  /// Holdings are stored in troy ounces. Screens show the unit the user picked.
+  double _fromOunces(double ounces, String unit) =>
+      ounces * _troyOzGrams / _gramsOf(unit);
+
+  double _toOunces(double amount, String unit) =>
+      amount * _gramsOf(unit) / _troyOzGrams;
+
+  List<AppDropdownEntry<String>> get _unitEntries => _weightUnits.keys
+      .map((String unit) => AppDropdownEntry<String>(value: unit, label: unit))
+      .toList(growable: false);
+
+  Future<void> _saveMetalUnits() async {
+    final PrefsService prefs = context.read<PrefsService>();
+    await prefs.setString(_metalUnitKey, _unit);
+    await prefs.setString(_metalUnitsKey, jsonEncode(_metalUnits));
+  }
+
+  /// The Price screen's unit control applies to every metal, so both screens match.
+  Future<void> _setAllMetalUnits(String unit) async {
+    setState(() {
+      _unit = unit;
+      final Map<String, String> next = <String, String>{..._metalUnits};
+      for (final String code in _priceCodes) {
+        if (CurrencyLookup.of(code).isMetal) next[code] = unit;
+      }
+      for (final String code in _holdings.keys) {
+        if (CurrencyLookup.of(code).isMetal) next[code] = unit;
+      }
+      _metalUnits = next;
+    });
+    await _saveMetalUnits();
+  }
+
+  Future<void> _setMetalUnit(String code, String unit) async {
+    setState(() => _metalUnits[code] = unit);
+    await _saveMetalUnits();
   }
 
   Future<void> _saveHoldings() async {
@@ -128,6 +261,49 @@ class _MetalsPageState extends State<MetalsPage>
     );
   }
 
+  Widget _baseCurrencyRow(
+    AppPalette p,
+    SettingsProvider settings,
+    Currency base,
+    Key key,
+  ) {
+    final L10n l10n = L10n.of(context);
+    return Row(
+      children: <Widget>[
+        FieldLabel(l10n.baseCurrency, width: 104),
+        Expanded(
+          child: InkWell(
+            key: key,
+            onTap: () async {
+              final Currency? picked = await CurrencyPicker.show(
+                context,
+                title: L10n.read(context).baseCurrency,
+              );
+              if (picked != null) {
+                await settings.setBaseCode(picked.code);
+              }
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                FlagAvatar(base, size: 20),
+                const SizedBox(width: 6),
+                Text(
+                  base.code,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: p.textPrimary,
+                  ),
+                ),
+                Icon(Icons.expand_more, size: 18, color: p.textSecondary),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   // -- Price --------------------------------------------------------------
 
   Widget _priceTab(AppPalette p) {
@@ -143,40 +319,7 @@ class _MetalsPageState extends State<MetalsPage>
           padding: const EdgeInsets.all(12),
           child: Column(
             children: <Widget>[
-              Row(
-                children: <Widget>[
-                  FieldLabel(l10n.baseCurrency, width: 104),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () async {
-                        final Currency? picked = await CurrencyPicker.show(
-                          context,
-                          title: L10n.read(context).baseCurrency,
-                        );
-                        if (picked != null) {
-                          await settings.setBaseCode(picked.code);
-                        }
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: <Widget>[
-                          FlagAvatar(base, size: 20),
-                          const SizedBox(width: 6),
-                          Text(
-                            base.code,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: p.textPrimary,
-                            ),
-                          ),
-                          Icon(Icons.expand_more,
-                              size: 18, color: p.textSecondary),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              _baseCurrencyRow(p, settings, base, const Key('price-base')),
               const SizedBox(height: 10),
               Row(
                 children: <Widget>[
@@ -185,12 +328,10 @@ class _MetalsPageState extends State<MetalsPage>
                     child: Align(
                       alignment: Alignment.centerRight,
                       child: AppDropdown<String>(
+                        key: const Key('price-metal-unit'),
                         value: _unit,
-                        entries: _weightUnits.keys
-                            .map((String u) =>
-                                AppDropdownEntry<String>(value: u, label: u))
-                            .toList(growable: false),
-                        onChanged: (String v) => setState(() => _unit = v),
+                        entries: _unitEntries,
+                        onChanged: _setAllMetalUnits,
                       ),
                     ),
                   ),
@@ -200,10 +341,43 @@ class _MetalsPageState extends State<MetalsPage>
           ),
         ),
         const SizedBox(height: 12),
-        ...<String>['USD', 'BTC', 'XAU', 'XAG', 'ETH']
-            .map((String code) => _assetCard(p, settings, rates, base, code)),
+        ..._priceCodes.map(
+          (String code) => _assetCard(
+            p,
+            settings,
+            rates,
+            base,
+            code,
+            onRemove: _defaultPrices.contains(code)
+                ? null
+                : () => _removePriceCurrency(code),
+          ),
+        ),
+        OutlinedButton.icon(
+          key: const Key('price-add-currency'),
+          onPressed: _addPriceCurrency,
+          icon: const Icon(Icons.add, size: 18),
+          label: Text(l10n.addCurrency),
+        ),
       ],
     );
+  }
+
+  Future<void> _addPriceCurrency() async {
+    final Currency? picked = await CurrencyPicker.show(
+      context,
+      title: L10n.read(context).selectCurrency,
+      exclude: _priceCodes,
+    );
+    if (picked == null || !mounted) return;
+    if (_priceCodes.contains(picked.code)) return;
+    setState(() => _extraPrices.add(picked.code));
+    await _savePrices();
+  }
+
+  Future<void> _removePriceCurrency(String code) async {
+    setState(() => _extraPrices.remove(code));
+    await _savePrices();
   }
 
   Widget _assetCard(
@@ -211,18 +385,19 @@ class _MetalsPageState extends State<MetalsPage>
     SettingsProvider settings,
     RatesProvider rates,
     Currency base,
-    String code,
-  ) {
+    String code, {
+    VoidCallback? onRemove,
+  }) {
     final L10n l10n = L10n.of(context);
     final Currency asset = CurrencyLookup.of(code);
     final double? perUnitInBase = rates.convert(1, code, base.code);
     final double? change = rates.assetChange24h(code);
+    final String unit = _unitFor(code);
 
-    // Metals are quoted per troy ounce; convert to the chosen weight unit.
+    // Metals are quoted per troy ounce; convert to this metal's weight unit.
     double? shown = perUnitInBase;
     if (asset.isMetal && perUnitInBase != null) {
-      final double grams = _weightUnits[_unit] ?? 31.1034768;
-      shown = perUnitInBase / 31.1034768 * grams;
+      shown = perUnitInBase / _troyOzGrams * _gramsOf(unit);
     }
 
     return Padding(
@@ -255,12 +430,24 @@ class _MetalsPageState extends State<MetalsPage>
                           color: p.textSecondary,
                         ),
                       ),
+                      if (onRemove != null)
+                        IconButton(
+                          tooltip: asset.code,
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 28,
+                            minHeight: 28,
+                          ),
+                          icon: Icon(Icons.close, size: 16, color: p.textSecondary),
+                          onPressed: onRemove,
+                        ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
                     asset.isMetal
-                        ? l10n.pricePer(_unit)
+                        ? l10n.pricePer(unit)
                         : l10n.oneCode(asset.code),
                     style: TextStyle(fontSize: 10.5, color: p.textSecondary),
                   ),
@@ -319,83 +506,311 @@ class _MetalsPageState extends State<MetalsPage>
 
   // -- Cross rate ---------------------------------------------------------
 
-  Widget _crossTab(AppPalette p) {
-    final RatesProvider rates = context.watch<RatesProvider>();
-    const List<String> codes = <String>['USD', 'EUR', 'BTC', 'XAU', 'XAG'];
+  Future<void> _pickCrossBase() async {
+    final Currency? picked = await CurrencyPicker.show(
+      context,
+      title: L10n.read(context).baseCurrency,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _crossBase = picked.code;
+      if (!_defaultCross.contains(picked.code) &&
+          !_extraCross.contains(picked.code)) {
+        _extraCross.add(picked.code);
+      }
+    });
+    final PrefsService prefs = context.read<PrefsService>();
+    await prefs.setString(_crossBaseKey, _crossBase);
+    await prefs.setStringList(_crossKey, _extraCross);
+  }
 
-    return SingleChildScrollView(
+  Future<void> _addCrossCurrency() async {
+    final Currency? picked = await CurrencyPicker.show(
+      context,
+      title: L10n.read(context).selectCurrency,
+      exclude: _crossCodes,
+    );
+    if (picked == null || !mounted) return;
+    if (_crossCodes.contains(picked.code)) return;
+    setState(() => _extraCross.add(picked.code));
+    await context.read<PrefsService>().setStringList(_crossKey, _extraCross);
+  }
+
+  Future<void> _removeCrossCurrency(String code) async {
+    setState(() {
+      _extraCross.remove(code);
+      if (_crossBase == code) _crossBase = 'USD';
+    });
+    final PrefsService prefs = context.read<PrefsService>();
+    await prefs.setStringList(_crossKey, _extraCross);
+    await prefs.setString(_crossBaseKey, _crossBase);
+  }
+
+  Widget _crossTab(AppPalette p) {
+    final L10n l10n = L10n.of(context);
+    final RatesProvider rates = context.watch<RatesProvider>();
+    final List<String> codes = _crossCodes;
+    final Currency base = CurrencyLookup.of(_crossBase);
+
+    return ListView(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-      child: SectionCard(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          children: <Widget>[
-            Row(
+      children: <Widget>[
+        SectionCard(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: <Widget>[
+              FieldLabel(l10n.baseCurrency, width: 104),
+              Expanded(
+                child: InkWell(
+                  key: const Key('cross-base'),
+                  onTap: _pickCrossBase,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      FlagAvatar(base, size: 20),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          base.code,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: p.textPrimary,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.expand_more, size: 18, color: p.textSecondary),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _tableHeading(p, l10n.tabCross),
+        SectionCard(
+          padding: const EdgeInsets.all(10),
+          child: _crossMatrix(p, rates, codes),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          key: const Key('cross-add-currency'),
+          onPressed: _addCrossCurrency,
+          icon: const Icon(Icons.add, size: 18),
+          label: Text(l10n.addCurrency),
+        ),
+        const SizedBox(height: 16),
+        _tableHeading(p, l10n.keyPoints),
+        SectionCard(
+          padding: const EdgeInsets.all(10),
+          child: _keyPointsTable(p, l10n, rates, codes),
+        ),
+      ],
+    );
+  }
+
+  Widget _tableHeading(AppPalette p, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: p.textPrimary,
+        ),
+      ),
+    );
+  }
+
+  Widget _crossMatrix(AppPalette p, RatesProvider rates, List<String> codes) {
+    const double labelWidth = 72;
+    const double colWidth = 68;
+    const double rowHeight = 36;
+
+    TextStyle head(Color color) => TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        SizedBox(
+          width: labelWidth,
+          child: Column(
+            children: <Widget>[
+              const SizedBox(height: rowHeight),
+              for (final String row in codes)
+                SizedBox(
+                  height: rowHeight,
+                  child: Row(
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          row,
+                          key: ValueKey<String>('cross-row-$row'),
+                          overflow: TextOverflow.ellipsis,
+                          style: head(p.primary),
+                        ),
+                      ),
+                      if (_extraCross.contains(row))
+                        GestureDetector(
+                          key: ValueKey<String>('cross-remove-$row'),
+                          onTap: () => _removeCrossCurrency(row),
+                          child: Icon(Icons.close, size: 14, color: p.textSecondary),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const SizedBox(width: 52),
-                ...codes.map(
-                  (String c) => Expanded(
-                    child: Text(
-                      c,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: p.textSecondary,
+                Row(
+                  children: <Widget>[
+                    for (final String code in codes)
+                      SizedBox(
+                        width: colWidth,
+                        height: rowHeight,
+                        child: Center(
+                          child: Text(code, style: head(p.textSecondary)),
+                        ),
+                      ),
+                  ],
+                ),
+                for (final String row in codes)
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: p.outline.withOpacity(0.6)),
                       ),
                     ),
+                    child: Row(
+                      children: <Widget>[
+                        for (final String col in codes)
+                          SizedBox(
+                            width: colWidth,
+                            height: rowHeight,
+                            child: Center(
+                              child: Text(
+                                _crossCell(rates, row, col),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: row == col
+                                      ? p.textSecondary
+                                      : p.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _crossCell(RatesProvider rates, String row, String col) {
+    if (row == col) return '1';
+    final double? value = rates.pairRate(row, col);
+    if (value == null) return '—';
+    return Fmt.smart(value, maxDecimals: 4);
+  }
+
+  Widget _keyPointsTable(
+    AppPalette p,
+    L10n l10n,
+    RatesProvider rates,
+    List<String> codes,
+  ) {
+    final TextStyle head = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      color: p.textSecondary,
+    );
+    final List<String> others =
+        codes.where((String code) => code != _crossBase).toList(growable: false);
+
+    return Column(
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(flex: 3, child: Text(l10n.currency, style: head)),
+            Expanded(
+              flex: 4,
+              child: Text(
+                l10n.oneCode(_crossBase),
+                textAlign: TextAlign.end,
+                style: head,
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Text(l10n.colInverse, textAlign: TextAlign.end, style: head),
+            ),
+          ],
+        ),
+        for (final String code in others)
+          Container(
+            key: ValueKey<String>('key-point-$code'),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: p.outline.withOpacity(0.6)),
+              ),
+            ),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    code,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: p.primary,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 4,
+                  child: Text(
+                    _rateText(rates.pairRate(_crossBase, code)),
+                    textAlign: TextAlign.end,
+                    style: TextStyle(fontSize: 12, color: p.textPrimary),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    _rateText(rates.pairRate(code, _crossBase)),
+                    textAlign: TextAlign.end,
+                    style: TextStyle(fontSize: 12, color: p.textPrimary),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            ...codes.map((String row) {
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: p.outline.withOpacity(0.6)),
-                  ),
-                ),
-                child: Row(
-                  children: <Widget>[
-                    SizedBox(
-                      width: 52,
-                      child: Text(
-                        row,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: p.primary,
-                        ),
-                      ),
-                    ),
-                    ...codes.map((String col) {
-                      final double? value = rates.pairRate(row, col);
-                      return Expanded(
-                        child: Text(
-                          row == col
-                              ? '1'
-                              : (value == null
-                                  ? '—'
-                                  : Fmt.smart(value, maxDecimals: 6)),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            color: row == col
-                                ? p.textSecondary
-                                : p.textPrimary,
-                          ),
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
+          ),
+      ],
     );
+  }
+
+  String _rateText(double? value) {
+    if (value == null) return '—';
+    return Fmt.smart(value, maxDecimals: 4);
   }
 
   // -- My assets ----------------------------------------------------------
@@ -415,6 +830,16 @@ class _MetalsPageState extends State<MetalsPage>
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
       children: <Widget>[
+        SectionCard(
+          padding: const EdgeInsets.all(12),
+          child: _baseCurrencyRow(
+            p,
+            settings,
+            base,
+            const Key('assets-base'),
+          ),
+        ),
+        const SizedBox(height: 12),
         SectionCard(
           color: p.primary.withOpacity(0.12),
           borderColor: p.primary.withOpacity(0.5),
@@ -449,6 +874,9 @@ class _MetalsPageState extends State<MetalsPage>
             final Currency c = CurrencyLookup.of(entry.key);
             final double? value =
                 rates.convert(entry.value, entry.key, base.code);
+            final String unit = _unitFor(c.code);
+            final double shownQty =
+                c.isMetal ? _fromOunces(entry.value, unit) : entry.value;
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: SectionCard(
@@ -463,7 +891,7 @@ class _MetalsPageState extends State<MetalsPage>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            '${Fmt.smart(entry.value)} ${c.code}',
+                            '${Fmt.smart(shownQty)} ${c.isMetal ? unit : c.code}',
                             style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
@@ -475,6 +903,16 @@ class _MetalsPageState extends State<MetalsPage>
                             style: TextStyle(
                                 fontSize: 10.5, color: p.textSecondary),
                           ),
+                          if (c.isMetal) ...<Widget>[
+                            const SizedBox(height: 6),
+                            AppDropdown<String>(
+                              key: ValueKey<String>('asset-unit-${c.code}'),
+                              value: unit,
+                              entries: _unitEntries,
+                              onChanged: (String next) =>
+                                  _setMetalUnit(c.code, next),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -519,8 +957,15 @@ class _MetalsPageState extends State<MetalsPage>
     );
     if (picked == null || !mounted) return;
 
+    final String unit = _unitFor(picked.code);
+    final double? stored = _holdings[picked.code];
     final TextEditingController controller = TextEditingController(
-      text: _holdings[picked.code]?.toString() ?? '',
+      text: stored == null
+          ? ''
+          : Fmt.smart(
+              picked.isMetal ? _fromOunces(stored, unit) : stored,
+              grouping: false,
+            ),
     );
 
     final double? qty = await showDialog<double>(
@@ -534,9 +979,7 @@ class _MetalsPageState extends State<MetalsPage>
             autofocus: true,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              hintText: picked.isMetal
-                  ? dialogL10n.troyOunces
-                  : dialogL10n.quantity,
+              hintText: picked.isMetal ? unit : dialogL10n.quantity,
             ),
           ),
           actions: <Widget>[
@@ -556,11 +999,12 @@ class _MetalsPageState extends State<MetalsPage>
 
     controller.dispose();
     if (qty == null) return;
+    final double storedQty = picked.isMetal ? _toOunces(qty, unit) : qty;
     setState(() {
-      if (qty <= 0) {
+      if (storedQty <= 0) {
         _holdings.remove(picked.code);
       } else {
-        _holdings[picked.code] = qty;
+        _holdings[picked.code] = storedQty;
       }
     });
     await _saveHoldings();

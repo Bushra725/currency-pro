@@ -80,10 +80,27 @@ class RateSnapshot {
 
   /// Overlays [live] quotes on this wider table so majors stay real-time
   /// while less common codes still have a value.
-  RateSnapshot overlay(RateSnapshot live) {
+  ///
+  /// A live quote that disagrees with the wider table by more than
+  /// [maxDrift] is left out. That keeps a bad or inverted ticker from
+  /// replacing a real fiat rate.
+  RateSnapshot overlay(RateSnapshot live, {double maxDrift = 0.12}) {
+    final Map<String, double> merged = <String, double>{...rates};
+    live.rates.forEach((String code, double value) {
+      if (value <= 0) return;
+      final double? current = merged[code];
+      if (current == null || current <= 0) {
+        merged[code] = value;
+        return;
+      }
+      final double ratio = value / current;
+      if (ratio >= 1 - maxDrift && ratio <= 1 + maxDrift) {
+        merged[code] = value;
+      }
+    });
     return RateSnapshot(
       base: base,
-      rates: <String, double>{...rates, ...live.rates},
+      rates: merged,
       fetchedAt: DateTime.now(),
       providerUpdatedAt: DateTime.now(),
       provider: '$provider+${live.provider}',

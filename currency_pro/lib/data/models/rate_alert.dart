@@ -35,6 +35,19 @@ class RateAlert {
   double get targetDeltaPercent =>
       startRate == 0 ? 0 : (targetRate - startRate) / startRate * 100;
 
+  /// Rate after [percent] has been applied in [direction].
+  ///
+  /// Five percent above 1.00 is 1.05. Five percent below 1.00 is 0.95.
+  static double targetForPercent(
+    double start,
+    double percent,
+    AlertDirection direction,
+  ) {
+    final double move = percent.abs();
+    final double signed = direction == AlertDirection.above ? move : -move;
+    return start * (1 + signed / 100);
+  }
+
   /// 0..1 progress of [current] between [startRate] and [targetRate].
   double progress(double current) {
     final span = targetRate - startRate;

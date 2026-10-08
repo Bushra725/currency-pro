@@ -107,11 +107,6 @@ class _MultiCurrencyPageState extends State<MultiCurrencyPage> {
       drawer: const AppDrawer(current: Routes.multi),
       appBar: RateAppBar(
         title: l10n.multiCurrency,
-        showLogo: false,
-        uppercase: false,
-        titleMaxLines: 2,
-        titleFontSize: 16.5,
-        titleLetterSpacing: 0.1,
         actions: <Widget>[
           Tooltip(
             message: l10n.currencyCountTip,

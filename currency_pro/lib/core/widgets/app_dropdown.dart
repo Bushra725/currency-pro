@@ -158,10 +158,41 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     if (picked != null && picked != widget.value) widget.onChanged(picked);
   }
 
+  /// Closed-button width of the longest face, so picking "g" does not
+  /// shrink the control under a longer unit such as "oz t".
+  double _widestFace(BuildContext context, TextStyle style) {
+    final TextDirection direction = Directionality.of(context);
+    final TextScaler scaler = MediaQuery.textScalerOf(context);
+    double widest = 0;
+    for (final AppDropdownEntry<T> entry in widget.entries) {
+      final TextPainter painter = TextPainter(
+        text: TextSpan(text: entry.buttonLabel ?? entry.label, style: style),
+        maxLines: 1,
+        textDirection: direction,
+        textScaler: scaler,
+      )..layout();
+      if (painter.width > widest) widest = painter.width;
+      painter.dispose();
+    }
+    return widest;
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
     final AppDropdownEntry<T>? current = _current;
+    final TextStyle labelStyle = widget.labelStyle ??
+        TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w700,
+          color: p.textPrimary,
+        );
+    final Widget face = Text(
+      current?.buttonLabel ?? current?.label ?? '',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: labelStyle,
+    );
 
     return Material(
       key: _anchor,
@@ -179,19 +210,12 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                 Icon(current!.icon, size: 16, color: p.primary),
                 const SizedBox(width: 8),
               ],
-              Flexible(
-                child: Text(
-                  current?.buttonLabel ?? current?.label ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: widget.labelStyle ??
-                      TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                        color: p.textPrimary,
-                      ),
-                ),
-              ),
+              widget.expand
+                  ? Flexible(child: face)
+                  : SizedBox(
+                      width: _widestFace(context, labelStyle),
+                      child: face,
+                    ),
               const SizedBox(width: 4),
               AnimatedRotation(
                 turns: _open ? 0.5 : 0,

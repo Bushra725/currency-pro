@@ -30,10 +30,12 @@ class Expense {
     required this.amount,
     required this.category,
     required this.date,
+    this.note = '',
   });
 
   final String id;
   String title;
+  String note;
   double amount;
   ExpenseCategory category;
   DateTime date;
@@ -41,6 +43,7 @@ class Expense {
   Map<String, dynamic> toJson() => <String, dynamic>{
         'id': id,
         'title': title,
+        'note': note,
         'amount': amount,
         'category': category.name,
         'date': date.millisecondsSinceEpoch,
@@ -49,6 +52,7 @@ class Expense {
   factory Expense.fromJson(Map<String, dynamic> json) => Expense(
         id: json['id'] as String,
         title: json['title'] as String? ?? '',
+        note: json['note'] as String? ?? '',
         amount: (json['amount'] as num).toDouble(),
         category: ExpenseCategory.values.firstWhere(
           (ExpenseCategory c) => c.name == json['category'],
@@ -59,7 +63,7 @@ class Expense {
       );
 }
 
-/// A trip: a budget in the home currency, spending in the local currency.
+/// A trip: a budget in the destination currency, spending in that same currency.
 class Trip {
   Trip({
     required this.id,
@@ -71,6 +75,7 @@ class Trip {
     required this.endDate,
     List<Expense>? expenses,
     this.completed = false,
+    this.budgetInLocal = false,
   }) : expenses = expenses ?? <Expense>[];
 
   final String id;
@@ -78,8 +83,12 @@ class Trip {
   String homeCurrency;
   String localCurrency;
 
-  /// Budget expressed in [homeCurrency].
+  /// Budget amount. New trips store this in [localCurrency]; older trips
+  /// stored it in [homeCurrency] when [budgetInLocal] is false.
   double budget;
+
+  /// True when [budget] is already expressed in [localCurrency].
+  bool budgetInLocal;
   DateTime startDate;
   DateTime endDate;
   List<Expense> expenses;
@@ -105,6 +114,7 @@ class Trip {
         'homeCurrency': homeCurrency,
         'localCurrency': localCurrency,
         'budget': budget,
+        'budgetInLocal': budgetInLocal,
         'startDate': startDate.millisecondsSinceEpoch,
         'endDate': endDate.millisecondsSinceEpoch,
         'completed': completed,
@@ -117,6 +127,7 @@ class Trip {
         homeCurrency: json['homeCurrency'] as String? ?? 'USD',
         localCurrency: json['localCurrency'] as String? ?? 'EUR',
         budget: (json['budget'] as num?)?.toDouble() ?? 0,
+        budgetInLocal: json['budgetInLocal'] as bool? ?? false,
         startDate: DateTime.fromMillisecondsSinceEpoch(
             (json['startDate'] as num).toInt()),
         endDate: DateTime.fromMillisecondsSinceEpoch(

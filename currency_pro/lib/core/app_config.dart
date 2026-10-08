@@ -43,6 +43,21 @@ class AppConfig {
   static const String fawazPagesLatest =
       'https://latest.currency-api.pages.dev/v1/currencies/usd.min.json';
 
+  /// One published day from the same archive, for chart history.
+  ///
+  /// The pages.dev host is the one live rates already use. The jsDelivr copy
+  /// is only a fallback when that host has no file for the day.
+  static List<String> fawazOn(DateTime day, String code) {
+    final String date = '${day.year.toString().padLeft(4, '0')}-'
+        '${day.month.toString().padLeft(2, '0')}-'
+        '${day.day.toString().padLeft(2, '0')}';
+    final String file = '/v1/currencies/${code.toLowerCase()}.min.json';
+    return <String>[
+      'https://$date.currency-api.pages.dev$file',
+      'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@$date$file',
+    ];
+  }
+
   /// Coinbase mid-market majors, refreshed continuously while online.
   static const String coinbaseUsdRates =
       'https://api.coinbase.com/v2/exchange-rates?currency=USD';
@@ -58,7 +73,25 @@ class AppConfig {
   static String yahooUsdQuoteUrl() {
     final String symbols =
         yahooUsdMajors.map((String code) => 'USD$code=X').join(',');
-    return 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=$symbols';
+    return 'https://query1.finance.yahoo.com/v8/finance/spark'
+        '?symbols=$symbols&range=1d&interval=1d';
+  }
+
+  /// Daily chart for one Yahoo symbol, such as `USDGBP=X` or `BTC-USD`.
+  static String yahooChart(String symbol, int days) {
+    final String range = days <= 10
+        ? '10d'
+        : days <= 30
+            ? '1mo'
+            : days <= 90
+                ? '3mo'
+                : days <= 180
+                    ? '6mo'
+                    : days <= 365
+                        ? '1y'
+                        : '2y';
+    return 'https://query1.finance.yahoo.com/v8/finance/chart/'
+        '$symbol?interval=1d&range=$range';
   }
 
   static String frankfurterLatest(String base) =>

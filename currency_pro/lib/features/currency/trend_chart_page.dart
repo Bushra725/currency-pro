@@ -67,12 +67,9 @@ class _TrendChartPageState extends State<TrendChartPage> {
           _error = _ChartError.network;
         } else if (result.points.length < 2) {
           _points = <RatePoint>[];
-          // An empty series is either a pair with no published history, or
-          // a response that came back with nothing. Neither case shows the
-          // request, the status code, or the query string.
-          _error = _api.supports(_from, _to)
-              ? _ChartError.network
-              : _ChartError.unsupportedPair;
+          // The hosts answered, but this pair has no daily series. That is
+          // not a connection problem.
+          _error = _ChartError.unsupportedPair;
         } else {
           _points = result.points;
           _error = null;
@@ -195,7 +192,22 @@ class _TrendChartPageState extends State<TrendChartPage> {
                   SizedBox(
                     height: 220,
                     child: Center(
-                      child: CircularProgressIndicator(color: p.primary),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          CircularProgressIndicator(color: p.primary),
+                          const SizedBox(height: 16),
+                          Text(
+                            l10n.chartChecking,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              height: 1.45,
+                              color: p.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   )
                 else if (_error != null)

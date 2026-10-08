@@ -32,6 +32,15 @@ class _RateListPageState extends State<RateListPage> {
   double _baseAmount = 1;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<RatesProvider>().ensureFresh();
+    });
+  }
+
+  @override
   void dispose() {
     _amount.dispose();
     _search.dispose();

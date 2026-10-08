@@ -307,10 +307,21 @@ class _RateAlertPageState extends State<RateAlertPage> {
     String from = settings.fromCode;
     String to = settings.toCode;
     AlertDirection direction = AlertDirection.above;
+    double percent = 5;
     final TextEditingController target = TextEditingController();
+    final TextEditingController percentField = TextEditingController(text: '5');
 
     double? currentRate() => rates.pairRate(from, to);
-    target.text = Fmt.smart(currentRate() ?? 1, maxDecimals: 6, grouping: false);
+
+    void writeTarget() {
+      final double? live = currentRate();
+      if (live == null || live <= 0 || percent <= 0) return;
+      final double next = RateAlert.targetForPercent(live, percent, direction);
+      if (next <= 0) return;
+      target.text = Fmt.smart(next, maxDecimals: 6, grouping: false);
+    }
+
+    writeTarget();
 
     final bool? created = await showModalBottomSheet<bool>(
       context: context,
@@ -330,7 +341,8 @@ class _RateAlertPageState extends State<RateAlertPage> {
                 top: 18,
                 bottom: MediaQuery.of(context).viewInsets.bottom + 18,
               ),
-              child: Column(
+              child: SingleChildScrollView(
+                child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -351,7 +363,10 @@ class _RateAlertPageState extends State<RateAlertPage> {
                             final Currency? picked =
                                 await CurrencyPicker.show(context);
                             if (picked != null) {
-                              setSheet(() => from = picked.code);
+                              setSheet(() {
+                                from = picked.code;
+                                writeTarget();
+                              });
                             }
                           },
                           child: Text(from),
@@ -367,7 +382,10 @@ class _RateAlertPageState extends State<RateAlertPage> {
                             final Currency? picked =
                                 await CurrencyPicker.show(context);
                             if (picked != null) {
-                              setSheet(() => to = picked.code);
+                              setSheet(() {
+                                to = picked.code;
+                                writeTarget();
+                              });
                             }
                           },
                           child: Text(to),
@@ -403,7 +421,55 @@ class _RateAlertPageState extends State<RateAlertPage> {
                     ],
                     selected: <AlertDirection>{direction},
                     onSelectionChanged: (Set<AlertDirection> value) =>
-                        setSheet(() => direction = value.first),
+                        setSheet(() {
+                      direction = value.first;
+                      writeTarget();
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.alertPercent,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: p.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <double>[1, 2, 5, 10, 15, 25].map((double value) {
+                      final bool selected = (percent - value).abs() < 0.001;
+                      return ChoiceChip(
+                        label: Text('${Fmt.smart(value, grouping: false)}%'),
+                        selected: selected,
+                        onSelected: (_) => setSheet(() {
+                          percent = value;
+                          percentField.text =
+                              Fmt.smart(value, grouping: false);
+                          writeTarget();
+                        }),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: percentField,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: l10n.alertPercent,
+                      suffixText: '%',
+                    ),
+                    onChanged: (String text) {
+                      final double? value = Fmt.parse(text);
+                      if (value == null || value <= 0) return;
+                      setSheet(() {
+                        percent = value;
+                        writeTarget();
+                      });
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -425,6 +491,7 @@ class _RateAlertPageState extends State<RateAlertPage> {
                   ),
                 ],
               ),
+              ),
             );
           },
         );
@@ -433,6 +500,7 @@ class _RateAlertPageState extends State<RateAlertPage> {
 
     final double? targetValue = Fmt.parse(target.text);
     target.dispose();
+    percentField.dispose();
 
     if (created != true || targetValue == null || !mounted) return;
 

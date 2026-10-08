@@ -51,7 +51,7 @@ class _TrendChartState extends State<TrendChart> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              L10n.of(context).chartLoadFailed,
+              L10n.of(context).chartNoHistory,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: p.textSecondary,

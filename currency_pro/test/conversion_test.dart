@@ -4,6 +4,7 @@ import 'package:currency_pro/data/currency_catalog.dart';
 import 'package:currency_pro/data/currency_lookup.dart';
 import 'package:currency_pro/data/fallback_rates.dart';
 import 'package:currency_pro/data/models/currency.dart';
+import 'package:currency_pro/data/models/rate_alert.dart';
 import 'package:currency_pro/data/models/rate_snapshot.dart';
 import 'package:currency_pro/features/converters/unit_catalog.dart';
 import 'package:currency_pro/features/converters/unit_models.dart';
@@ -35,6 +36,47 @@ void main() {
 
     test('returns null for unknown codes', () {
       expect(snapshot.convert(1, 'USD', 'ZZZ'), isNull);
+    });
+
+    test('a percentage move sets the alert target up or down', () {
+      expect(
+        RateAlert.targetForPercent(1, 5, AlertDirection.above),
+        closeTo(1.05, 1e-9),
+      );
+      expect(
+        RateAlert.targetForPercent(1, 5, AlertDirection.below),
+        closeTo(0.95, 1e-9),
+      );
+      expect(
+        RateAlert.targetForPercent(0.9, 10, AlertDirection.below),
+        closeTo(0.81, 1e-9),
+      );
+    });
+
+    test('a live quote updates a close rate and keeps a wild one', () {
+      final RateSnapshot live = RateSnapshot(
+        base: 'USD',
+        rates: const <String, double>{
+          'EUR': 0.93,
+          'SYP': 12,
+        },
+        fetchedAt: DateTime(2026, 10, 8),
+        providerUpdatedAt: DateTime(2026, 10, 8),
+        provider: 'live',
+      );
+      final RateSnapshot wide = RateSnapshot(
+        base: 'USD',
+        rates: const <String, double>{
+          'USD': 1,
+          'EUR': 0.92,
+          'SYP': 13000,
+        },
+        fetchedAt: DateTime(2026, 10, 8),
+        providerUpdatedAt: DateTime(2026, 10, 8),
+      );
+      final RateSnapshot merged = wide.overlay(live);
+      expect(merged.rates['EUR'], 0.93);
+      expect(merged.rates['SYP'], 13000);
     });
 
     test('survives a JSON round trip', () {

@@ -131,31 +131,26 @@ class RatesApi {
     if (res.statusCode != 200) {
       throw RatesUnavailable('yahoo returned ${res.statusCode}');
     }
-    final body = jsonDecode(res.body) as Map<String, dynamic>;
-    final quoteResponse = body['quoteResponse'];
-    if (quoteResponse is! Map) {
+    final body = jsonDecode(res.body);
+    if (body is! Map) {
       throw RatesUnavailable('Malformed Yahoo response');
-    }
-    final result = quoteResponse['result'];
-    if (result is! List || result.isEmpty) {
-      throw RatesUnavailable('Empty Yahoo quotes');
     }
 
     final rates = <String, double>{'USD': 1.0};
-    for (final dynamic row in result) {
-      if (row is! Map) continue;
-      final String symbol = (row['symbol'] as String? ?? '').toUpperCase();
-      if (!symbol.startsWith('USD') || !symbol.endsWith('=X')) continue;
+    body.forEach((dynamic key, dynamic row) {
+      if (row is! Map) return;
+      final String symbol = key.toString().toUpperCase();
+      if (!symbol.startsWith('USD') || !symbol.endsWith('=X')) return;
       final String code = symbol.substring(3, symbol.length - 2);
-      if (code.isEmpty || code == 'USD') continue;
-      final dynamic price = row['regularMarketPrice'] ?? row['bid'] ?? row['ask'];
-      final double? value = price is num
-          ? price.toDouble()
-          : double.tryParse(price?.toString() ?? '');
+      if (code.isEmpty || code == 'USD') return;
+      final dynamic raw = row['fulldayPrice'] ?? _lastNum(row['close']);
+      final double? value = raw is num
+          ? raw.toDouble()
+          : double.tryParse(raw?.toString() ?? '');
       if (value != null && value > 0) {
         rates[code] = value;
       }
-    }
+    });
     if (rates.length <= 1) throw RatesUnavailable('No Yahoo USD crosses');
 
     final DateTime now = DateTime.now();
@@ -287,6 +282,15 @@ class RatesApi {
       provider: 'currency-api',
       isStale: false,
     );
+  }
+
+  static num? _lastNum(dynamic raw) {
+    if (raw is! List) return null;
+    for (int i = raw.length - 1; i >= 0; i--) {
+      final dynamic value = raw[i];
+      if (value is num && value > 0) return value;
+    }
+    return null;
   }
 
   static Map<String, double> _toDoubleMap(Map<dynamic, dynamic> raw) {
