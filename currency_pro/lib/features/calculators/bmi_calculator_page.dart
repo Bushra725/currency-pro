@@ -56,8 +56,10 @@ class _BmiCalculatorPageState extends State<BmiCalculatorPage> {
               ButtonSegment<bool>(value: false, label: Text(l10n.imperial)),
             ],
             selected: <bool>{_metric},
-            onSelectionChanged: (Set<bool> value) =>
-                setState(() => _metric = value.first),
+            onSelectionChanged: (Set<bool> value) {
+              if (value.isEmpty) return;
+              setState(() => _metric = value.first);
+            },
           ),
           const SizedBox(height: 12),
           SectionCard(

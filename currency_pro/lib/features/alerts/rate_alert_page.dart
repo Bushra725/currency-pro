@@ -44,9 +44,8 @@ class _RateAlertPageState extends State<RateAlertPage> {
       SnackBar(
         content: Text(
           fired.length == 1
-              ? L10n.read(context).pairReached(
-                  '${fired.first.from}/${fired.first.to}',
-                )
+              ? L10n.read(context)
+                    .pairReached('${fired.first.from}/${fired.first.to}')
               : L10n.read(context).alertsReached('${fired.length}'),
         ),
       ),
@@ -91,13 +90,23 @@ class _RateAlertPageState extends State<RateAlertPage> {
             child: Row(
               children: <Widget>[
                 Expanded(
-                  child: _counter(p, Icons.schedule, '${alerts.pending.length}',
-                      l10n.pending, p.primary),
+                  child: _counter(
+                    p,
+                    Icons.schedule,
+                    '${alerts.pending.length}',
+                    l10n.pending,
+                    p.primary,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: _counter(p, Icons.check_circle_outline,
-                      '${alerts.achieved.length}', l10n.achieved, p.up),
+                  child: _counter(
+                    p,
+                    Icons.check_circle_outline,
+                    '${alerts.achieved.length}',
+                    l10n.achieved,
+                    p.up,
+                  ),
                 ),
               ],
             ),
@@ -146,8 +155,7 @@ class _RateAlertPageState extends State<RateAlertPage> {
             ),
           ),
           const SizedBox(width: 6),
-          Text(label,
-              style: TextStyle(fontSize: 11.5, color: p.textSecondary)),
+          Text(label, style: TextStyle(fontSize: 11.5, color: p.textSecondary)),
         ],
       ),
     );
@@ -164,8 +172,9 @@ class _RateAlertPageState extends State<RateAlertPage> {
     final Currency to = CurrencyLookup.of(a.to);
     final double? current = rates.pairRate(a.from, a.to);
     final double progress = current == null ? 0 : a.progress(current);
-    final double? remaining =
-        current == null ? null : (a.targetRate - current).abs();
+    final double? remaining = current == null
+        ? null
+        : (a.targetRate - current).abs();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -187,8 +196,11 @@ class _RateAlertPageState extends State<RateAlertPage> {
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child:
-                      Icon(Icons.arrow_forward, size: 13, color: p.textSecondary),
+                  child: Icon(
+                    Icons.arrow_forward,
+                    size: 13,
+                    color: p.textSecondary,
+                  ),
                 ),
                 FlagAvatar(to, size: 22),
                 const SizedBox(width: 4),
@@ -202,8 +214,10 @@ class _RateAlertPageState extends State<RateAlertPage> {
                 ),
                 const Spacer(),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: (a.isAchieved ? p.up : p.primary).withOpacity(0.18),
                     borderRadius: BorderRadius.circular(20),
@@ -218,8 +232,11 @@ class _RateAlertPageState extends State<RateAlertPage> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete_outline,
-                      size: 18, color: p.textSecondary),
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 18,
+                    color: p.textSecondary,
+                  ),
                   onPressed: () => alerts.remove(a.id),
                 ),
               ],
@@ -227,8 +244,12 @@ class _RateAlertPageState extends State<RateAlertPage> {
             const SizedBox(height: 10),
             Row(
               children: <Widget>[
-                _stat(p, l10n.registered, Fmt.smart(a.startRate, maxDecimals: 6),
-                    p.textSecondary),
+                _stat(
+                  p,
+                  l10n.registered,
+                  Fmt.smart(a.startRate, maxDecimals: 6),
+                  p.textSecondary,
+                ),
                 _stat(
                   p,
                   a.direction == AlertDirection.above
@@ -261,12 +282,12 @@ class _RateAlertPageState extends State<RateAlertPage> {
               a.isAchieved
                   ? l10n.reachedOn(Fmt.dateTime(a.achievedAt!))
                   : remaining == null
-                      ? l10n.waitingForRate
-                      : l10n.amountToGo(
-                          Fmt.smart(remaining, maxDecimals: 6),
-                          a.to,
-                          (progress * 100).toStringAsFixed(0),
-                        ),
+                  ? l10n.waitingForRate
+                  : l10n.amountToGo(
+                      Fmt.smart(remaining, maxDecimals: 6),
+                      a.to,
+                      (progress * 100).toStringAsFixed(0),
+                    ),
               style: TextStyle(fontSize: 11, color: p.textSecondary),
             ),
           ],
@@ -275,14 +296,18 @@ class _RateAlertPageState extends State<RateAlertPage> {
     );
   }
 
-  Widget _stat(AppPalette p, String label, String value, Color color,
-      {String? sub}) {
+  Widget _stat(
+    AppPalette p,
+    String label,
+    String value,
+    Color color, {
+    String? sub,
+  }) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(label,
-              style: TextStyle(fontSize: 10.5, color: p.textSecondary)),
+          Text(label, style: TextStyle(fontSize: 10.5, color: p.textSecondary)),
           const SizedBox(height: 2),
           Text(
             value,
@@ -293,8 +318,7 @@ class _RateAlertPageState extends State<RateAlertPage> {
             ),
           ),
           if (sub != null)
-            Text(sub,
-                style: TextStyle(fontSize: 10, color: p.textSecondary)),
+            Text(sub, style: TextStyle(fontSize: 10, color: p.textSecondary)),
         ],
       ),
     );
@@ -304,153 +328,33 @@ class _RateAlertPageState extends State<RateAlertPage> {
     final SettingsProvider settings = context.read<SettingsProvider>();
     final RatesProvider rates = context.read<RatesProvider>();
 
-    String from = settings.fromCode;
-    String to = settings.toCode;
-    AlertDirection direction = AlertDirection.above;
-    final TextEditingController target = TextEditingController();
-
-    double? currentRate() => rates.pairRate(from, to);
-    target.text = Fmt.smart(currentRate() ?? 1, maxDecimals: 6, grouping: false);
-
-    final bool? created = await showModalBottomSheet<bool>(
+    final _AlertDraft? draft = await showModalBottomSheet<_AlertDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (BuildContext sheetContext) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setSheet) {
-            final AppPalette p = context.palette;
-            final L10n l10n = L10n.read(context);
-            final double? live = currentRate();
-
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 18,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 18,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    l10n.newRateAlert,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: p.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            final Currency? picked =
-                                await CurrencyPicker.show(context);
-                            if (picked != null) {
-                              setSheet(() => from = picked.code);
-                            }
-                          },
-                          child: Text(from),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Icon(Icons.east, size: 16, color: p.primary),
-                      ),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            final Currency? picked =
-                                await CurrencyPicker.show(context);
-                            if (picked != null) {
-                              setSheet(() => to = picked.code);
-                            }
-                          },
-                          child: Text(to),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    live == null
-                        ? l10n.noLiveRate
-                        : l10n.currentPair(
-                            from,
-                            Fmt.smart(live, maxDecimals: 6),
-                            to,
-                          ),
-                    style:
-                        TextStyle(fontSize: 12, color: p.textSecondary),
-                  ),
-                  const SizedBox(height: 12),
-                  SegmentedButton<AlertDirection>(
-                    segments: <ButtonSegment<AlertDirection>>[
-                      ButtonSegment<AlertDirection>(
-                        value: AlertDirection.above,
-                        label: Text(l10n.risesTo),
-                        icon: const Icon(Icons.trending_up, size: 16),
-                      ),
-                      ButtonSegment<AlertDirection>(
-                        value: AlertDirection.below,
-                        label: Text(l10n.fallsTo),
-                        icon: const Icon(Icons.trending_down, size: 16),
-                      ),
-                    ],
-                    selected: <AlertDirection>{direction},
-                    onSelectionChanged: (Set<AlertDirection> value) =>
-                        setSheet(() => direction = value.first),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: target,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: l10n.targetRate,
-                      suffixText: to,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () => Navigator.of(sheetContext).pop(true),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 48),
-                    ),
-                    child: Text(l10n.createAlert),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      builder: (BuildContext sheetContext) =>
+          _CreateAlertSheet(from: settings.fromCode, to: settings.toCode),
     );
 
-    final double? targetValue = Fmt.parse(target.text);
-    target.dispose();
-
-    if (created != true || targetValue == null || !mounted) return;
+    if (draft == null || !mounted) return;
+    final double? targetValue = Fmt.parse(draft.target);
+    if (targetValue == null || !targetValue.isFinite) return;
 
     final bool allowed = await AlertNotifications.ensurePermission();
     if (!mounted) return;
     await context.read<SettingsProvider>().setNotificationsEnabled(allowed);
 
     await context.read<AlertsProvider>().add(
-          RateAlert(
-            id: DateTime.now().microsecondsSinceEpoch.toString(),
-            from: from,
-            to: to,
-            startRate: rates.pairRate(from, to) ?? targetValue,
-            targetRate: targetValue,
-            direction: direction,
-            createdAt: DateTime.now(),
-          ),
-        );
+      RateAlert(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        from: draft.from,
+        to: draft.to,
+        startRate: rates.pairRate(draft.from, draft.to) ?? targetValue,
+        targetRate: targetValue,
+        direction: draft.direction,
+        createdAt: DateTime.now(),
+      ),
+    );
 
     if (!mounted) return;
     await _evaluate();
@@ -461,6 +365,171 @@ class _RateAlertPageState extends State<RateAlertPage> {
           allowed
               ? L10n.read(context).alertAddedNotify
               : L10n.read(context).alertAddedSilent,
+        ),
+      ),
+    );
+  }
+}
+
+class _AlertDraft {
+  const _AlertDraft({
+    required this.from,
+    required this.to,
+    required this.direction,
+    required this.target,
+  });
+
+  final String from;
+  final String to;
+  final AlertDirection direction;
+  final String target;
+}
+
+class _CreateAlertSheet extends StatefulWidget {
+  const _CreateAlertSheet({required this.from, required this.to});
+
+  final String from;
+  final String to;
+
+  @override
+  State<_CreateAlertSheet> createState() => _CreateAlertSheetState();
+}
+
+class _CreateAlertSheetState extends State<_CreateAlertSheet> {
+  late String _from = widget.from;
+  late String _to = widget.to;
+  AlertDirection _direction = AlertDirection.above;
+  late final TextEditingController _target = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final double? live = context.read<RatesProvider>().pairRate(_from, _to);
+    _target.text = Fmt.smart(live ?? 1, maxDecimals: 6, grouping: false);
+  }
+
+  @override
+  void dispose() {
+    _target.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppPalette p = context.palette;
+    final L10n l10n = L10n.read(context);
+    final double? live = context.read<RatesProvider>().pairRate(_from, _to);
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                l10n.newRateAlert,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: p.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        final Currency? picked = await CurrencyPicker.show(
+                          context,
+                        );
+                        if (picked != null && mounted) {
+                          setState(() => _from = picked.code);
+                        }
+                      },
+                      child: Text(_from),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(Icons.east, size: 16, color: p.primary),
+                  ),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        final Currency? picked = await CurrencyPicker.show(
+                          context,
+                        );
+                        if (picked != null && mounted) {
+                          setState(() => _to = picked.code);
+                        }
+                      },
+                      child: Text(_to),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                live == null
+                    ? l10n.noLiveRate
+                    : l10n.currentPair(
+                        _from,
+                        Fmt.smart(live, maxDecimals: 6),
+                        _to,
+                      ),
+                style: TextStyle(fontSize: 12, color: p.textSecondary),
+              ),
+              const SizedBox(height: 12),
+              SegmentedButton<AlertDirection>(
+                segments: <ButtonSegment<AlertDirection>>[
+                  ButtonSegment<AlertDirection>(
+                    value: AlertDirection.above,
+                    label: Text(l10n.risesTo),
+                    icon: const Icon(Icons.trending_up, size: 16),
+                  ),
+                  ButtonSegment<AlertDirection>(
+                    value: AlertDirection.below,
+                    label: Text(l10n.fallsTo),
+                    icon: const Icon(Icons.trending_down, size: 16),
+                  ),
+                ],
+                selected: <AlertDirection>{_direction},
+                onSelectionChanged: (Set<AlertDirection> value) {
+                  if (value.isEmpty) return;
+                  setState(() => _direction = value.first);
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _target,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: l10n.targetRate,
+                  suffixText: _to,
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(
+                  _AlertDraft(
+                    from: _from,
+                    to: _to,
+                    direction: _direction,
+                    target: _target.text,
+                  ),
+                ),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+                child: Text(l10n.createAlert),
+              ),
+            ],
+          ),
         ),
       ),
     );

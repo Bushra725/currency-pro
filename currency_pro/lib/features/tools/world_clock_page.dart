@@ -80,8 +80,8 @@ class _WorldClockPageState extends State<WorldClockPage> {
                       final ClockEntry c = clocks.all[index];
                       final DateTime now = c.nowThere();
                       final DateTime here = DateTime.now();
-                      final int diffMinutes = c.offsetMinutes -
-                          here.timeZoneOffset.inMinutes;
+                      final int diffMinutes =
+                          c.offsetMinutes - here.timeZoneOffset.inMinutes;
 
                       return Padding(
                         key: ValueKey<String>(c.id),
@@ -91,8 +91,7 @@ class _WorldClockPageState extends State<WorldClockPage> {
                             children: <Widget>[
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     Text(
                                       c.city,
@@ -134,12 +133,18 @@ class _WorldClockPageState extends State<WorldClockPage> {
                               Column(
                                 children: <Widget>[
                                   IconButton(
-                                    icon: Icon(Icons.delete_outline,
-                                        size: 18, color: p.textSecondary),
+                                    icon: Icon(
+                                      Icons.delete_outline,
+                                      size: 18,
+                                      color: p.textSecondary,
+                                    ),
                                     onPressed: () => clocks.remove(c.id),
                                   ),
-                                  Icon(Icons.drag_handle,
-                                      size: 18, color: p.textSecondary),
+                                  Icon(
+                                    Icons.drag_handle,
+                                    size: 18,
+                                    color: p.textSecondary,
+                                  ),
                                 ],
                               ),
                             ],
@@ -156,32 +161,62 @@ class _WorldClockPageState extends State<WorldClockPage> {
 
   Future<void> _addCity() async {
     final ClocksProvider clocks = context.read<ClocksProvider>();
-    final TextEditingController search = TextEditingController();
-
     final ClockEntry? picked = await showModalBottomSheet<ClockEntry>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (BuildContext sheetContext) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setSheet) {
-          final AppPalette p = context.palette;
-          final String q = search.text.trim().toLowerCase();
-          final List<ClockEntry> results = kWorldCities
-              .where((ClockEntry c) =>
-                  q.isEmpty ||
-                  c.city.toLowerCase().contains(q) ||
-                  c.region.toLowerCase().contains(q))
-              .toList();
+      builder: (BuildContext sheetContext) => const _CityPickerSheet(),
+    );
+    if (picked != null) await clocks.add(picked);
+  }
+}
 
-          return Column(
-            mainAxisSize: MainAxisSize.min,
+class _CityPickerSheet extends StatefulWidget {
+  const _CityPickerSheet();
+
+  @override
+  State<_CityPickerSheet> createState() => _CityPickerSheetState();
+}
+
+class _CityPickerSheetState extends State<_CityPickerSheet> {
+  final TextEditingController _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppPalette p = context.palette;
+    final ClocksProvider clocks = context.watch<ClocksProvider>();
+    final String q = _search.text.trim().toLowerCase();
+    final List<ClockEntry> results = kWorldCities
+        .where(
+          (ClockEntry c) =>
+              q.isEmpty ||
+              c.city.toLowerCase().contains(q) ||
+              c.region.toLowerCase().contains(q),
+        )
+        .toList();
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double cap = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : MediaQuery.sizeOf(context).height * 0.85;
+        final double keyboard = MediaQuery.viewInsetsOf(context).bottom;
+        final double height = (cap - keyboard).clamp(0.0, cap);
+        return SizedBox(
+          height: height,
+          child: Column(
             children: <Widget>[
               const SizedBox(height: 14),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
-                  controller: search,
-                  onChanged: (_) => setSheet(() {}),
+                  controller: _search,
+                  onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: L10n.read(context).searchCityCountry,
                     prefixIcon: const Icon(Icons.search, size: 19),
@@ -189,9 +224,8 @@ class _WorldClockPageState extends State<WorldClockPage> {
                 ),
               ),
               const SizedBox(height: 10),
-              Flexible(
+              Expanded(
                 child: ListView.separated(
-                  shrinkWrap: true,
                   itemCount: results.length,
                   separatorBuilder: (_, __) =>
                       Divider(height: 1, color: p.outline.withOpacity(0.5)),
@@ -213,18 +247,15 @@ class _WorldClockPageState extends State<WorldClockPage> {
                         ),
                       ),
                       enabled: !added,
-                      onTap: () => Navigator.of(sheetContext).pop(c),
+                      onTap: () => Navigator.of(context).pop(c),
                     );
                   },
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
-
-    search.dispose();
-    if (picked != null) await clocks.add(picked);
   }
 }

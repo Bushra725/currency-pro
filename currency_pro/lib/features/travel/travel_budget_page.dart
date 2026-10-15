@@ -46,13 +46,23 @@ class TravelBudgetPage extends StatelessWidget {
             child: Row(
               children: <Widget>[
                 Expanded(
-                  child: _counter(p, Icons.schedule,
-                      '${trips.ongoing.length}', l10n.ongoing, p.primary),
+                  child: _counter(
+                    p,
+                    Icons.schedule,
+                    '${trips.ongoing.length}',
+                    l10n.ongoing,
+                    p.primary,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: _counter(p, Icons.check_circle_outline,
-                      '${trips.completed.length}', l10n.tripCompleted, p.up),
+                  child: _counter(
+                    p,
+                    Icons.check_circle_outline,
+                    '${trips.completed.length}',
+                    l10n.tripCompleted,
+                    p.up,
+                  ),
                 ),
               ],
             ),
@@ -77,8 +87,13 @@ class TravelBudgetPage extends StatelessWidget {
     );
   }
 
-  Widget _counter(AppPalette p, IconData icon, String value, String label,
-      Color color) {
+  Widget _counter(
+    AppPalette p,
+    IconData icon,
+    String value,
+    String label,
+    Color color,
+  ) {
     return SectionCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
@@ -94,8 +109,7 @@ class TravelBudgetPage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          Text(label,
-              style: TextStyle(fontSize: 11.5, color: p.textSecondary)),
+          Text(label, style: TextStyle(fontSize: 11.5, color: p.textSecondary)),
         ],
       ),
     );
@@ -104,141 +118,34 @@ class TravelBudgetPage extends StatelessWidget {
   static Future<void> _newTrip(BuildContext context) async {
     final L10n l10n = L10n.read(context);
     final SettingsProvider settings = context.read<SettingsProvider>();
-    final TextEditingController name = TextEditingController();
-    final TextEditingController budget = TextEditingController(text: '1000');
-    String home = settings.fromCode;
-    String local = settings.toCode;
-    DateTimeRange range = DateTimeRange(
-      start: DateTime.now(),
-      end: DateTime.now().add(const Duration(days: 6)),
-    );
-
-    final bool? ok = await showModalBottomSheet<bool>(
+    final _TripDraft? draft = await showModalBottomSheet<_TripDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (BuildContext sheetContext) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setSheet) {
-          final AppPalette p = context.palette;
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 18,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 18,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  l10n.newTrip,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: p.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: name,
-                  decoration: InputDecoration(
-                    labelText: l10n.tripName,
-                    hintText: l10n.tripNameHint,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          final Currency? picked =
-                              await CurrencyPicker.show(context,
-                                  title: l10n.homeCurrency);
-                          if (picked != null) {
-                            setSheet(() => home = picked.code);
-                          }
-                        },
-                        child: Text(l10n.homeCode(home)),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          final Currency? picked =
-                              await CurrencyPicker.show(context,
-                                  title: l10n.localCurrency);
-                          if (picked != null) {
-                            setSheet(() => local = picked.code);
-                          }
-                        },
-                        child: Text(l10n.localCode(local)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: budget,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: l10n.budgetLabel,
-                    suffixText: home,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final DateTimeRange? picked = await showDateRangePicker(
-                      context: context,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                      initialDateRange: range,
-                    );
-                    if (picked != null) setSheet(() => range = picked);
-                  },
-                  icon: const Icon(Icons.date_range, size: 18),
-                  label: Text(
-                    '${Fmt.date(range.start)} → ${Fmt.date(range.end)}',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => Navigator.of(sheetContext).pop(true),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
-                  child: Text(l10n.createTrip),
-                ),
-              ],
-            ),
-          );
-        },
+      builder: (BuildContext sheetContext) => _NewTripSheet(
+        l10n: l10n,
+        home: settings.fromCode,
+        local: settings.toCode,
       ),
     );
 
-    final String tripName =
-        name.text.trim().isEmpty ? l10n.tripTo(local) : name.text.trim();
-    final double budgetValue = Fmt.parse(budget.text) ?? 0;
-    name.dispose();
-    budget.dispose();
-
-    if (ok != true || !context.mounted) return;
+    if (draft == null || !context.mounted) return;
+    final String tripName = draft.name.trim().isEmpty
+        ? l10n.tripTo(draft.local)
+        : draft.name.trim();
+    final double budgetValue = Fmt.parse(draft.budget) ?? 0;
 
     await context.read<TripsProvider>().add(
-          Trip(
-            id: DateTime.now().microsecondsSinceEpoch.toString(),
-            name: tripName,
-            homeCurrency: home,
-            localCurrency: local,
-            budget: budgetValue,
-            startDate: range.start,
-            endDate: range.end,
-          ),
-        );
+      Trip(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        name: tripName,
+        homeCurrency: draft.home,
+        localCurrency: draft.local,
+        budget: budgetValue,
+        startDate: draft.range.start,
+        endDate: draft.range.end,
+      ),
+    );
   }
 }
 
@@ -249,13 +156,13 @@ class _TripCard extends StatelessWidget {
 
   static const Map<ExpenseCategory, IconData> _icons =
       <ExpenseCategory, IconData>{
-    ExpenseCategory.food: Icons.restaurant,
-    ExpenseCategory.transport: Icons.directions_bus,
-    ExpenseCategory.hotel: Icons.hotel,
-    ExpenseCategory.shopping: Icons.shopping_bag_outlined,
-    ExpenseCategory.sightseeing: Icons.camera_alt_outlined,
-    ExpenseCategory.other: Icons.more_horiz,
-  };
+        ExpenseCategory.food: Icons.restaurant,
+        ExpenseCategory.transport: Icons.directions_bus,
+        ExpenseCategory.hotel: Icons.hotel,
+        ExpenseCategory.shopping: Icons.shopping_bag_outlined,
+        ExpenseCategory.sightseeing: Icons.camera_alt_outlined,
+        ExpenseCategory.other: Icons.more_horiz,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -267,9 +174,10 @@ class _TripCard extends StatelessWidget {
 
     final double spentHome =
         rates.convert(trip.spentLocal, trip.localCurrency, trip.homeCurrency) ??
-            0;
-    final double ratio =
-        trip.budget <= 0 ? 0 : (spentHome / trip.budget).clamp(0.0, 1.0);
+        0;
+    final double ratio = trip.budget <= 0
+        ? 0
+        : (spentHome / trip.budget).clamp(0.0, 1.0);
     final double remaining = trip.budget - spentHome;
     final Map<ExpenseCategory, double> byCategory = trip.byCategory;
 
@@ -296,8 +204,7 @@ class _TripCard extends StatelessWidget {
                       Text(
                         '${Fmt.date(trip.startDate)} → '
                         '${Fmt.date(trip.endDate)} · ${l10n.daysCount(trip.days)}',
-                        style: TextStyle(
-                            fontSize: 11, color: p.textSecondary),
+                        style: TextStyle(fontSize: 11, color: p.textSecondary),
                       ),
                     ],
                   ),
@@ -370,32 +277,31 @@ class _TripCard extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: byCategory.entries.map(
-                  (MapEntry<ExpenseCategory, double> e) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: p.surfaceAlt,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Icon(_icons[e.key], size: 13, color: p.primary),
-                          const SizedBox(width: 5),
-                          Text(
-                            '${_categoryLabel(l10n, e.key)} ${Fmt.smart(e.value)}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: p.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ).toList(),
+                children: byCategory.entries.map((
+                  MapEntry<ExpenseCategory, double> e,
+                ) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: p.surfaceAlt,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(_icons[e.key], size: 13, color: p.primary),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${_categoryLabel(l10n, e.key)} ${Fmt.smart(e.value)}',
+                          style: TextStyle(fontSize: 11, color: p.textPrimary),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
             ],
             const SizedBox(height: 10),
@@ -434,8 +340,7 @@ class _TripCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(label,
-            style: TextStyle(fontSize: 10.5, color: p.textSecondary)),
+        Text(label, style: TextStyle(fontSize: 10.5, color: p.textSecondary)),
         const SizedBox(height: 2),
         Text(
           value,
@@ -451,102 +356,31 @@ class _TripCard extends StatelessWidget {
 
   Future<void> _addExpense(BuildContext context, Trip trip) async {
     final L10n l10n = L10n.read(context);
-    final TextEditingController title = TextEditingController();
-    final TextEditingController amount = TextEditingController();
-    ExpenseCategory category = ExpenseCategory.food;
-
-    final bool? ok = await showModalBottomSheet<bool>(
+    final _ExpenseDraft? draft = await showModalBottomSheet<_ExpenseDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (BuildContext sheetContext) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setSheet) {
-          final AppPalette p = context.palette;
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 18,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 18,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  l10n.addExpense,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: p.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: title,
-                  decoration: InputDecoration(labelText: l10n.whatFor),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: amount,
-                  autofocus: true,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: l10n.amountLabel,
-                    suffixText: trip.localCurrency,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  children: ExpenseCategory.values.map((ExpenseCategory c) {
-                    final bool selected = c == category;
-                    return ChoiceChip(
-                      label: Text(_categoryLabel(l10n, c)),
-                      selected: selected,
-                      showCheckmark: false,
-                      onSelected: (_) => setSheet(() => category = c),
-                      labelStyle: TextStyle(
-                        fontSize: 11.5,
-                        color: selected ? p.onPrimary : p.textPrimary,
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => Navigator.of(sheetContext).pop(true),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
-                  child: Text(l10n.saveExpense),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+      builder: (BuildContext sheetContext) =>
+          _ExpenseSheet(l10n: l10n, currency: trip.localCurrency),
     );
 
-    final double? value = Fmt.parse(amount.text);
-    final String text =
-        title.text.trim().isEmpty ? _categoryLabel(l10n, category) : title.text.trim();
-    title.dispose();
-    amount.dispose();
-
-    if (ok != true || value == null || !context.mounted) return;
+    if (draft == null || !context.mounted) return;
+    final double? value = Fmt.parse(draft.amount);
+    if (value == null || !value.isFinite) return;
+    final String text = draft.title.trim().isEmpty
+        ? _categoryLabel(l10n, draft.category)
+        : draft.title.trim();
 
     await context.read<TripsProvider>().addExpense(
-          trip.id,
-          Expense(
-            id: DateTime.now().microsecondsSinceEpoch.toString(),
-            title: text,
-            amount: value,
-            category: category,
-            date: DateTime.now(),
-          ),
-        );
+      trip.id,
+      Expense(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        title: text,
+        amount: value,
+        category: draft.category,
+        date: DateTime.now(),
+      ),
+    );
   }
 
   Future<void> _showExpenses(BuildContext context, Trip trip) async {
@@ -561,69 +395,363 @@ class _TripCard extends StatelessWidget {
           builder: (BuildContext context, TripsProvider provider, _) {
             final Trip? live = provider.byId(trip.id);
             final List<Expense> items = live?.expenses ?? <Expense>[];
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const SizedBox(height: 16),
-                Text(
-                  l10n.tripExpenses(trip.name),
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: p.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Flexible(
-                  child: items.isEmpty
-                      ? EmptyState(
-                          icon: Icons.receipt_long,
-                          title: l10n.nothingLogged,
-                        )
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: items.length,
-                          separatorBuilder: (_, __) => Divider(
-                              height: 1, color: p.outline.withOpacity(0.5)),
-                          itemBuilder: (BuildContext context, int index) {
-                            final Expense e = items[index];
-                            return ListTile(
-                              dense: true,
-                              leading: Icon(_icons[e.category], size: 20),
-                              title: Text(e.title),
-                              subtitle: Text(
-                                '${_categoryLabel(l10n, e.category)} · ${Fmt.date(e.date)}',
-                                style: TextStyle(fontSize: 11),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Text(
-                                    '${Fmt.smart(e.amount)} '
-                                    '${trip.localCurrency}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: p.primary,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline,
-                                        size: 18),
-                                    onPressed: () => provider.removeExpense(
-                                        trip.id, e.id),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+            return LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                final double cap = constraints.maxHeight.isFinite
+                    ? constraints.maxHeight
+                    : MediaQuery.sizeOf(context).height * 0.85;
+                return SizedBox(
+                  height: cap,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const SizedBox(height: 16),
+                      Text(
+                        l10n.tripExpenses(trip.name),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: p.textPrimary,
                         ),
-                ),
-                const SizedBox(height: 16),
-              ],
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: items.isEmpty
+                            ? EmptyState(
+                                icon: Icons.receipt_long,
+                                title: l10n.nothingLogged,
+                              )
+                            : ListView.separated(
+                                itemCount: items.length,
+                                separatorBuilder: (_, __) => Divider(
+                                  height: 1,
+                                  color: p.outline.withOpacity(0.5),
+                                ),
+                                itemBuilder: (BuildContext context, int index) {
+                                  final Expense e = items[index];
+                                  return ListTile(
+                                    dense: true,
+                                    leading: Icon(_icons[e.category], size: 20),
+                                    title: Text(e.title),
+                                    subtitle: Text(
+                                      '${_categoryLabel(l10n, e.category)} · ${Fmt.date(e.date)}',
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        Text(
+                                          '${Fmt.smart(e.amount)} '
+                                          '${trip.localCurrency}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            color: p.primary,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            size: 18,
+                                          ),
+                                          onPressed: () => provider
+                                              .removeExpense(trip.id, e.id),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                );
+              },
             );
           },
         );
       },
+    );
+  }
+}
+
+class _TripDraft {
+  const _TripDraft({
+    required this.name,
+    required this.budget,
+    required this.home,
+    required this.local,
+    required this.range,
+  });
+
+  final String name;
+  final String budget;
+  final String home;
+  final String local;
+  final DateTimeRange range;
+}
+
+/// Owns the text fields for the life of the route. Disposing them when the
+/// sheet future returns throws, because the pop animation still has the
+/// fields mounted.
+class _NewTripSheet extends StatefulWidget {
+  const _NewTripSheet({
+    required this.l10n,
+    required this.home,
+    required this.local,
+  });
+
+  final L10n l10n;
+  final String home;
+  final String local;
+
+  @override
+  State<_NewTripSheet> createState() => _NewTripSheetState();
+}
+
+class _NewTripSheetState extends State<_NewTripSheet> {
+  late final TextEditingController _name = TextEditingController();
+  late final TextEditingController _budget = TextEditingController(
+    text: '1000',
+  );
+  late String _home = widget.home;
+  late String _local = widget.local;
+  late DateTimeRange _range = DateTimeRange(
+    start: DateTime.now(),
+    end: DateTime.now().add(const Duration(days: 6)),
+  );
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _budget.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final L10n l10n = widget.l10n;
+    final AppPalette p = context.palette;
+    return _SheetScroll(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            l10n.newTrip,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: p.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _name,
+            decoration: InputDecoration(
+              labelText: l10n.tripName,
+              hintText: l10n.tripNameHint,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    final Currency? picked = await CurrencyPicker.show(
+                      context,
+                      title: l10n.homeCurrency,
+                    );
+                    if (picked != null && mounted) {
+                      setState(() => _home = picked.code);
+                    }
+                  },
+                  child: Text(l10n.homeCode(_home)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    final Currency? picked = await CurrencyPicker.show(
+                      context,
+                      title: l10n.localCurrency,
+                    );
+                    if (picked != null && mounted) {
+                      setState(() => _local = picked.code);
+                    }
+                  },
+                  child: Text(l10n.localCode(_local)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _budget,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: l10n.budgetLabel,
+              suffixText: _home,
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () async {
+              final DateTimeRange? picked = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
+                initialDateRange: _range,
+              );
+              if (picked != null && mounted) setState(() => _range = picked);
+            },
+            icon: const Icon(Icons.date_range, size: 18),
+            label: Text('${Fmt.date(_range.start)} → ${Fmt.date(_range.end)}'),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(
+              _TripDraft(
+                name: _name.text,
+                budget: _budget.text,
+                home: _home,
+                local: _local,
+                range: _range,
+              ),
+            ),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+            ),
+            child: Text(l10n.createTrip),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpenseDraft {
+  const _ExpenseDraft({
+    required this.title,
+    required this.amount,
+    required this.category,
+  });
+
+  final String title;
+  final String amount;
+  final ExpenseCategory category;
+}
+
+class _ExpenseSheet extends StatefulWidget {
+  const _ExpenseSheet({required this.l10n, required this.currency});
+
+  final L10n l10n;
+  final String currency;
+
+  @override
+  State<_ExpenseSheet> createState() => _ExpenseSheetState();
+}
+
+class _ExpenseSheetState extends State<_ExpenseSheet> {
+  late final TextEditingController _title = TextEditingController();
+  late final TextEditingController _amount = TextEditingController();
+  ExpenseCategory _category = ExpenseCategory.food;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _amount.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final L10n l10n = widget.l10n;
+    final AppPalette p = context.palette;
+    return _SheetScroll(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            l10n.addExpense,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: p.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _title,
+            decoration: InputDecoration(labelText: l10n.whatFor),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _amount,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: l10n.amountLabel,
+              suffixText: widget.currency,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            children: ExpenseCategory.values.map((ExpenseCategory c) {
+              final bool selected = c == _category;
+              return ChoiceChip(
+                label: Text(_categoryLabel(l10n, c)),
+                selected: selected,
+                showCheckmark: false,
+                onSelected: (_) => setState(() => _category = c),
+                labelStyle: TextStyle(
+                  fontSize: 11.5,
+                  color: selected ? p.onPrimary : p.textPrimary,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(
+              _ExpenseDraft(
+                title: _title.text,
+                amount: _amount.text,
+                category: _category,
+              ),
+            ),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+            ),
+            child: Text(l10n.saveExpense),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Keeps a bottom sheet inside the space left above the keyboard.
+class _SheetScroll extends StatelessWidget {
+  const _SheetScroll({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final double keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: keyboard),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+          child: child,
+        ),
+      ),
     );
   }
 }
