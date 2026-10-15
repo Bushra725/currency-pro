@@ -20,6 +20,7 @@ import 'features/currency/rate_adjustment_page.dart';
 import 'features/currency/rate_list_page.dart';
 import 'features/currency/simulation_page.dart';
 import 'features/currency/trend_chart_page.dart';
+import 'features/premium/paywall_page.dart';
 import 'features/settings/about_page.dart';
 import 'features/settings/language_page.dart';
 import 'features/settings/settings_page.dart';
@@ -55,6 +56,7 @@ class Routes {
   static const String converters = '/converters';
   static const String height = '/height';
   static const String numberBase = '/number-base';
+  static const String premium = '/premium';
   static const String settings = '/settings';
   static const String theme = '/theme';
   static const String language = '/language';
@@ -84,6 +86,7 @@ class Routes {
         converters: (_) => const ConverterHubPage(),
         height: (_) => const HeightConverterPage(),
         numberBase: (_) => const NumberBasePage(),
+        premium: (_) => const PaywallPage(),
         settings: (_) => const SettingsPage(),
         theme: (_) => const ThemePage(),
         language: (_) => const LanguagePage(),

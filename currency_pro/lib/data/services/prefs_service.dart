@@ -42,6 +42,7 @@ class PrefsService {
   static const String kDefaultThemeV3 = 'default_theme_v3';
   static const String kFeedbackDefaultsV2 = 'feedback_defaults_v2';
   static const String kAdsFreeUntil = 'ads_free_until';
+  static const String kPremium = 'premium_owned';
 
   // -- primitives ---------------------------------------------------------
   String? getString(String key) => _prefs.getString(key);

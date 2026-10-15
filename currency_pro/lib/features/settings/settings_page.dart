@@ -16,6 +16,7 @@ import '../../core/widgets/section_card.dart';
 import '../../data/currency_lookup.dart';
 import '../../data/models/currency.dart';
 import '../../routes.dart';
+import '../../state/premium_controller.dart';
 import '../../state/rates_provider.dart';
 import '../../state/settings_provider.dart';
 import '../currency/currency_picker.dart';
@@ -294,6 +295,29 @@ class SettingsPage extends StatelessWidget {
                   onChanged: settings.setBankFeePercent,
                 ),
               ],
+            ),
+          ),
+          SectionLabel(l10n.premiumTitle),
+          SectionCard(
+            padding: EdgeInsets.zero,
+            child: ListTile(
+              leading: Icon(Icons.workspace_premium_outlined, color: p.primary),
+              title: Text(
+                context.watch<PremiumController>().isPremium
+                    ? l10n.premiumActive
+                    : l10n.premiumTitle,
+              ),
+              subtitle: Text(
+                l10n.premiumLead,
+                style: const TextStyle(fontSize: 11.5),
+              ),
+              trailing: Icon(Icons.chevron_right, color: p.textSecondary),
+              onTap: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  Routes.premium,
+                  (Route<dynamic> r) => r.isFirst,
+                );
+              },
             ),
           ),
           SectionLabel(l10n.ads),

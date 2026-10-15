@@ -49,7 +49,29 @@ class AdsService extends ChangeNotifier {
   bool get rewardedReady => _rewarded != null;
   bool get usingSampleAds => _sampleFallback;
 
+  bool _premium = false;
+
+  /// Premium removes every ad placement, not only the temporary reward.
+  void setPremium(bool value) {
+    if (_premium == value) return;
+    _premium = value;
+    if (value) {
+      _banner?.dispose();
+      _banner = null;
+      _interstitial?.dispose();
+      _interstitial = null;
+      _rewarded?.dispose();
+      _rewarded = null;
+      _rewardedInterstitial?.dispose();
+      _rewardedInterstitial = null;
+      _appOpen?.dispose();
+      _appOpen = null;
+    }
+    notifyListeners();
+  }
+
   bool get adsMuted {
+    if (_premium) return true;
     final DateTime? until = _adsFreeUntil;
     if (until == null) return false;
     if (DateTime.now().isBefore(until)) return true;
@@ -274,7 +296,8 @@ class AdsService extends ChangeNotifier {
   }
 
   Future<void> loadRewarded() async {
-    if (!isSupported || !_enabled || _loadingRewarded || _rewarded != null) {
+    if (!isSupported || !_enabled || adsMuted || _loadingRewarded ||
+        _rewarded != null) {
       return;
     }
     _loadingRewarded = true;

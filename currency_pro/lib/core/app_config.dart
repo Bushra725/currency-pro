@@ -14,6 +14,10 @@ class AppConfig {
   static const String privacyPolicyUrl =
       'https://sites.google.com/view/mob-apps-inc/privacy-policy';
 
+  /// Non-consumable product. Create this same id in App Store Connect and
+  /// Google Play, then buy it with a sandbox or license-tester account.
+  static const String premiumProductId = 'currencypro_premium';
+
   // ---------------------------------------------------------------------
   // Live exchange rates
   // ---------------------------------------------------------------------

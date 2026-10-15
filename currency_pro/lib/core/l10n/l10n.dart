@@ -312,6 +312,22 @@ class L10n {
   String get spendingOverview => t('spendingOverview');
   String get dailySpending => t('dailySpending');
   String get perDay => t('perDay');
+  String get premiumTitle => t('premiumTitle');
+  String get premiumLead => t('premiumLead');
+  String get premiumWhatUnlocks => t('premiumWhatUnlocks');
+  String get premiumPerkAds => t('premiumPerkAds');
+  String get premiumPerkAlerts => t('premiumPerkAlerts');
+  String get premiumPerkCharts => t('premiumPerkCharts');
+  String get premiumPerkExport => t('premiumPerkExport');
+  String get premiumBuy => t('premiumBuy');
+  String get premiumRestore => t('premiumRestore');
+  String get premiumSandbox => t('premiumSandbox');
+  String get premiumActive => t('premiumActive');
+  String get premiumUnlocked => t('premiumUnlocked');
+  String get premiumRestored => t('premiumRestored');
+  String get premiumNothing => t('premiumNothing');
+  String get premiumFailed => t('premiumFailed');
+  String get premiumStoreUnavailable => t('premiumStoreUnavailable');
   String get amountLabel => t('amountLabel');
   String get saveExpense => t('saveExpense');
   String tripExpenses(String name) => t('tripExpenses').replaceAll('{name}', name);
@@ -691,6 +707,25 @@ const Map<String, String> _en = <String, String>{
   'aboutThisApp': 'About this app',
   'privacyPolicy': 'Privacy policy',
   'privacyPolicySub': 'How Mob Apps Inc. uses data in this app',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'One purchase removes ads and keeps the full toolkit.',
+  'premiumWhatUnlocks': 'What you unlock',
+  'premiumPerkAds': 'No ads on any screen',
+  'premiumPerkAlerts': 'Unlimited rate alerts',
+  'premiumPerkCharts': 'Full trend-chart history',
+  'premiumPerkExport': 'Trip budget export',
+  'premiumBuy': 'Buy Premium',
+  'premiumRestore': 'Restore Purchases',
+  'premiumSandbox':
+      'Use a sandbox account. App Store sandbox and Google Play license testers are not charged.',
+  'premiumActive': 'Premium is active',
+  'premiumUnlocked': 'Buying unlocked these on this account',
+  'premiumRestored': 'Purchases restored',
+  'premiumNothing': 'No previous purchase was found for this account',
+  'premiumFailed':
+      'The purchase could not be completed. Check the store account and try again.',
+  'premiumStoreUnavailable':
+      'The store is not ready yet. Sign in with a sandbox account and try again.',
   'resetAll': 'Reset all settings',
   'resetAllSub': 'Clears favourites, alerts, trips and preferences',
   'resetEverything': 'Reset everything?',
@@ -1116,6 +1151,25 @@ const Map<String, String> _es = <String, String>{
       'Aún no hay historial diario para este par. Prueba una divisa principal, un metal o una criptomoneda.',
   'privacyPolicy': 'Política de privacidad',
   'privacyPolicySub': 'Cómo Mob Apps Inc. usa los datos en esta app',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'Una compra quita los anuncios y deja todas las herramientas.',
+  'premiumWhatUnlocks': 'Qué se desbloquea',
+  'premiumPerkAds': 'Sin anuncios en ninguna pantalla',
+  'premiumPerkAlerts': 'Alertas de tipo ilimitadas',
+  'premiumPerkCharts': 'Historial completo de gráficos',
+  'premiumPerkExport': 'Exportar el presupuesto del viaje',
+  'premiumBuy': 'Comprar Premium',
+  'premiumRestore': 'Restaurar compras',
+  'premiumSandbox':
+      'Usa una cuenta sandbox. Las cuentas sandbox de App Store y los testers de Google Play no se cobran.',
+  'premiumActive': 'Premium está activo',
+  'premiumUnlocked': 'La compra desbloqueó esto en esta cuenta',
+  'premiumRestored': 'Compras restauradas',
+  'premiumNothing': 'No hay una compra anterior en esta cuenta',
+  'premiumFailed':
+      'No se pudo completar la compra. Revisa la cuenta de la tienda e inténtalo de nuevo.',
+  'premiumStoreUnavailable':
+      'La tienda aún no está lista. Entra con una cuenta sandbox e inténtalo de nuevo.',
   'notNow': 'AHORA NO',
   'allowNotifications': 'PERMITIR NOTIFICACIONES',
   'update': 'ACTUALIZAR',
@@ -1590,6 +1644,25 @@ const Map<String, String> _fr = <String, String>{
       "L'historique quotidien n'est pas encore publié pour cette paire. Essayez une devise majeure, un métal ou une crypto.",
   'privacyPolicy': 'Politique de confidentialité',
   'privacyPolicySub': 'Comment Mob Apps Inc. utilise les données dans cette appli',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'Un achat retire les publicités et garde tous les outils.',
+  'premiumWhatUnlocks': 'Ce qui se débloque',
+  'premiumPerkAds': 'Aucune publicité',
+  'premiumPerkAlerts': 'Alertes de taux illimitées',
+  'premiumPerkCharts': 'Historique complet des graphiques',
+  'premiumPerkExport': 'Export du budget de voyage',
+  'premiumBuy': 'Acheter Premium',
+  'premiumRestore': 'Restaurer les achats',
+  'premiumSandbox':
+      'Utilisez un compte sandbox. Les comptes sandbox App Store et les testeurs Google Play ne sont pas débités.',
+  'premiumActive': 'Premium est actif',
+  'premiumUnlocked': 'L\'achat a débloqué ceci sur ce compte',
+  'premiumRestored': 'Achats restaurés',
+  'premiumNothing': 'Aucun achat précédent pour ce compte',
+  'premiumFailed':
+      'L\'achat n\'a pas abouti. Vérifiez le compte de la boutique et réessayez.',
+  'premiumStoreUnavailable':
+      'La boutique n\'est pas prête. Connectez-vous avec un compte sandbox et réessayez.',
   'notNow': 'PAS MAINTENANT',
   'allowNotifications': 'AUTORISER LES NOTIFICATIONS',
   'update': 'MAJ',
@@ -2064,6 +2137,25 @@ const Map<String, String> _de = <String, String>{
       'Für dieses Paar gibt es noch keinen Tagesverlauf. Versuche eine Hauptwährung, ein Metall oder eine Kryptowährung.',
   'privacyPolicy': 'Datenschutz',
   'privacyPolicySub': 'Wie Mob Apps Inc. Daten in dieser App nutzt',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'Ein Kauf entfernt Werbung und behält alle Werkzeuge.',
+  'premiumWhatUnlocks': 'Das wird freigeschaltet',
+  'premiumPerkAds': 'Keine Werbung',
+  'premiumPerkAlerts': 'Unbegrenzte Kursalarme',
+  'premiumPerkCharts': 'Vollständiger Chartverlauf',
+  'premiumPerkExport': 'Reisebudget exportieren',
+  'premiumBuy': 'Premium kaufen',
+  'premiumRestore': 'Käufe wiederherstellen',
+  'premiumSandbox':
+      'Nutze ein Sandbox-Konto. App-Store-Sandbox und Google-Play-Testkonten werden nicht belastet.',
+  'premiumActive': 'Premium ist aktiv',
+  'premiumUnlocked': 'Der Kauf hat dies für dieses Konto freigeschaltet',
+  'premiumRestored': 'Käufe wiederhergestellt',
+  'premiumNothing': 'Kein früherer Kauf für dieses Konto',
+  'premiumFailed':
+      'Der Kauf ist fehlgeschlagen. Prüfe das Shop-Konto und versuche es erneut.',
+  'premiumStoreUnavailable':
+      'Der Shop ist noch nicht bereit. Melde dich mit einem Sandbox-Konto an und versuche es erneut.',
   'notNow': 'NICHT JETZT',
   'allowNotifications': 'MITTEILUNGEN ERLAUBEN',
   'update': 'AKTUAL.',
@@ -2538,6 +2630,25 @@ const Map<String, String> _ar = <String, String>{
       'لا يتوفر السجل اليومي لهذا الزوج بعد. جرّب عملة رئيسية أو معدناً أو أصلاً رقمياً.',
   'privacyPolicy': 'سياسة الخصوصية',
   'privacyPolicySub': 'كيف تستخدم Mob Apps Inc. البيانات في هذا التطبيق',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'عملية شراء واحدة تزيل الإعلانات وتُبقي كل الأدوات.',
+  'premiumWhatUnlocks': 'ما يتم فتحه',
+  'premiumPerkAds': 'بدون إعلانات',
+  'premiumPerkAlerts': 'تنبيهات أسعار بلا حد',
+  'premiumPerkCharts': 'سجل الرسوم كاملاً',
+  'premiumPerkExport': 'تصدير ميزانية الرحلة',
+  'premiumBuy': 'شراء بريميوم',
+  'premiumRestore': 'استعادة المشتريات',
+  'premiumSandbox':
+      'استخدم حساب sandbox. حسابات App Store التجريبية ومختبرو Google Play لا يُحاسبون.',
+  'premiumActive': 'بريميوم مفعّل',
+  'premiumUnlocked': 'فتح الشراء هذا على هذا الحساب',
+  'premiumRestored': 'تمت استعادة المشتريات',
+  'premiumNothing': 'لا يوجد شراء سابق لهذا الحساب',
+  'premiumFailed':
+      'تعذر إتمام الشراء. تحقق من حساب المتجر وحاول مرة أخرى.',
+  'premiumStoreUnavailable':
+      'المتجر غير جاهز بعد. سجّل الدخول بحساب sandbox وحاول مرة أخرى.',
   'notNow': 'ليس الآن',
   'allowNotifications': 'السماح بالإشعارات',
   'update': 'تحديث',
@@ -3011,6 +3122,25 @@ const Map<String, String> _ur = <String, String>{
       'اس جوڑے کی روزانہ ہسٹری ابھی شائع نہیں ہوئی۔ کوئی بڑی کرنسی، دھات یا کرپٹو آزمائیں۔',
   'privacyPolicy': 'رازداری کی پالیسی',
   'privacyPolicySub': 'Mob Apps Inc. اس ایپ میں ڈیٹا کیسے استعمال کرتی ہے',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'ایک خریداری اشتہارات ہٹاتی ہے اور سارے ٹولز رکھتی ہے۔',
+  'premiumWhatUnlocks': 'کیا کھلتا ہے',
+  'premiumPerkAds': 'کسی اسکرین پر اشتہار نہیں',
+  'premiumPerkAlerts': 'لامحدود ریٹ الرٹس',
+  'premiumPerkCharts': 'مکمل ٹرینڈ چارٹ تاریخ',
+  'premiumPerkExport': 'ٹرپ بجٹ ایکسپورٹ',
+  'premiumBuy': 'پریمیم خریدیں',
+  'premiumRestore': 'خریداری بحال کریں',
+  'premiumSandbox':
+      'سینڈ باکس اکاؤنٹ استعمال کریں۔ App Store سینڈ باکس اور Google Play ٹیسٹرز سے رقم نہیں کٹتی۔',
+  'premiumActive': 'پریمیم فعال ہے',
+  'premiumUnlocked': 'خریداری نے اس اکاؤنٹ پر یہ کھول دیا',
+  'premiumRestored': 'خریداری بحال ہو گئی',
+  'premiumNothing': 'اس اکاؤنٹ پر کوئی پرانی خریداری نہیں ملی',
+  'premiumFailed':
+      'خریداری مکمل نہیں ہو سکی۔ اسٹور اکاؤنٹ چیک کریں اور دوبارہ کوشش کریں۔',
+  'premiumStoreUnavailable':
+      'اسٹور ابھی تیار نہیں۔ سینڈ باکس اکاؤنٹ سے سائن ان کریں اور دوبارہ کوشش کریں۔',
   'notNow': 'ابھی نہیں',
   'allowNotifications': 'اطلاعات کی اجازت',
   'update': 'اپ ڈیٹ',
@@ -3484,6 +3614,25 @@ const Map<String, String> _hi = <String, String>{
       'इस जोड़े का दैनिक इतिहास अभी प्रकाशित नहीं है। कोई प्रमुख मुद्रा, धातु या क्रिप्टो आज़माएँ।',
   'privacyPolicy': 'गोपनीयता नीति',
   'privacyPolicySub': 'Mob Apps Inc. इस ऐप में डेटा कैसे इस्तेमाल करती है',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'एक खरीदारी विज्ञापन हटाती है और सभी टूल रखती है।',
+  'premiumWhatUnlocks': 'क्या अनलॉक होता है',
+  'premiumPerkAds': 'किसी स्क्रीन पर विज्ञापन नहीं',
+  'premiumPerkAlerts': 'असीमित रेट अलर्ट',
+  'premiumPerkCharts': 'पूरा ट्रेंड चार्ट इतिहास',
+  'premiumPerkExport': 'ट्रिप बजट निर्यात',
+  'premiumBuy': 'प्रीमियम खरीदें',
+  'premiumRestore': 'खरीदारी पुनर्स्थापित करें',
+  'premiumSandbox':
+      'सैंडबॉक्स खाता इस्तेमाल करें। App Store सैंडबॉक्स और Google Play परीक्षकों से शुल्क नहीं लिया जाता।',
+  'premiumActive': 'प्रीमियम सक्रिय है',
+  'premiumUnlocked': 'खरीदारी ने इस खाते पर ये अनलॉक किया',
+  'premiumRestored': 'खरीदारी पुनर्स्थापित हुई',
+  'premiumNothing': 'इस खाते पर कोई पुरानी खरीदारी नहीं मिली',
+  'premiumFailed':
+      'खरीदारी पूरी नहीं हो सकी। स्टोर खाता जाँचें और फिर कोशिश करें।',
+  'premiumStoreUnavailable':
+      'स्टोर अभी तैयार नहीं है। सैंडबॉक्स खाते से साइन इन करें और फिर कोशिश करें।',
   'notNow': 'अभी नहीं',
   'allowNotifications': 'सूचनाएँ अनुमति दें',
   'update': 'अपडेट',
@@ -3957,6 +4106,23 @@ const Map<String, String> _zh = <String, String>{
       '该货币对尚无每日历史。请尝试主要货币、金属或加密资产。',
   'privacyPolicy': '隐私政策',
   'privacyPolicySub': 'Mob Apps Inc. 如何在此应用中使用数据',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': '一次购买即可去除广告并保留全部工具。',
+  'premiumWhatUnlocks': '解锁内容',
+  'premiumPerkAds': '所有页面无广告',
+  'premiumPerkAlerts': '无限汇率提醒',
+  'premiumPerkCharts': '完整走势图历史',
+  'premiumPerkExport': '导出旅行预算',
+  'premiumBuy': '购买高级版',
+  'premiumRestore': '恢复购买',
+  'premiumSandbox':
+      '请使用沙盒账号。App Store 沙盒和 Google Play 许可测试账号不会扣费。',
+  'premiumActive': '高级版已开通',
+  'premiumUnlocked': '购买已在此账号解锁以下内容',
+  'premiumRestored': '已恢复购买',
+  'premiumNothing': '此账号没有找到以往的购买',
+  'premiumFailed': '购买未能完成。请检查商店账号后重试。',
+  'premiumStoreUnavailable': '商店尚未就绪。请用沙盒账号登录后重试。',
   'notNow': '暂不',
   'allowNotifications': '允许通知',
   'update': '更新',
@@ -4425,6 +4591,25 @@ const Map<String, String> _pt = <String, String>{
       'O histórico diário deste par ainda não foi publicado. Tente uma moeda principal, um metal ou um criptoativo.',
   'privacyPolicy': 'Política de privacidade',
   'privacyPolicySub': 'Como a Mob Apps Inc. usa os dados neste app',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'Uma compra remove os anúncios e mantém todas as ferramentas.',
+  'premiumWhatUnlocks': 'O que é desbloqueado',
+  'premiumPerkAds': 'Sem anúncios em nenhum ecrã',
+  'premiumPerkAlerts': 'Alertas de taxa ilimitados',
+  'premiumPerkCharts': 'Histórico completo dos gráficos',
+  'premiumPerkExport': 'Exportar o orçamento da viagem',
+  'premiumBuy': 'Comprar Premium',
+  'premiumRestore': 'Restaurar compras',
+  'premiumSandbox':
+      'Use uma conta sandbox. Contas sandbox da App Store e testadores do Google Play não são cobrados.',
+  'premiumActive': 'O Premium está ativo',
+  'premiumUnlocked': 'A compra desbloqueou isto nesta conta',
+  'premiumRestored': 'Compras restauradas',
+  'premiumNothing': 'Não foi encontrada uma compra anterior nesta conta',
+  'premiumFailed':
+      'A compra não foi concluída. Verifique a conta da loja e tente novamente.',
+  'premiumStoreUnavailable':
+      'A loja ainda não está pronta. Entre com uma conta sandbox e tente novamente.',
   'notNow': 'AGORA NÃO',
   'allowNotifications': 'PERMITIR NOTIFICAÇÕES',
   'update': 'ATUALIZAR',
@@ -4899,6 +5084,25 @@ const Map<String, String> _tr = <String, String>{
       'Bu çift için günlük geçmiş henüz yayımlanmadı. Büyük bir para birimi, bir metal veya bir kripto deneyin.',
   'privacyPolicy': 'Gizlilik politikası',
   'privacyPolicySub': 'Mob Apps Inc. bu uygulamada verileri nasıl kullanır',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'Tek satın alma reklamları kaldırır ve tüm araçları tutar.',
+  'premiumWhatUnlocks': 'Açılanlar',
+  'premiumPerkAds': 'Hiçbir ekranda reklam yok',
+  'premiumPerkAlerts': 'Sınırsız kur uyarısı',
+  'premiumPerkCharts': 'Tam grafik geçmişi',
+  'premiumPerkExport': 'Seyahat bütçesini dışa aktar',
+  'premiumBuy': 'Premium satın al',
+  'premiumRestore': 'Satın almaları geri yükle',
+  'premiumSandbox':
+      'Sandbox hesabı kullanın. App Store sandbox ve Google Play test hesaplarından ücret alınmaz.',
+  'premiumActive': 'Premium etkin',
+  'premiumUnlocked': 'Satın alma bu hesapta bunları açtı',
+  'premiumRestored': 'Satın almalar geri yüklendi',
+  'premiumNothing': 'Bu hesapta önceki bir satın alma bulunamadı',
+  'premiumFailed':
+      'Satın alma tamamlanamadı. Mağaza hesabını kontrol edip yeniden deneyin.',
+  'premiumStoreUnavailable':
+      'Mağaza henüz hazır değil. Sandbox hesabıyla giriş yapıp yeniden deneyin.',
   'notNow': 'ŞİMDİ DEĞİL',
   'allowNotifications': 'BİLDİRİMLERE İZİN VER',
   'update': 'GÜNCELLE',
@@ -5372,6 +5576,25 @@ const Map<String, String> _id = <String, String>{
       'Riwayat harian pasangan ini belum tersedia. Coba mata uang utama, logam, atau aset kripto.',
   'privacyPolicy': 'Kebijakan privasi',
   'privacyPolicySub': 'Cara Mob Apps Inc. memakai data di aplikasi ini',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'Satu pembelian menghapus iklan dan mempertahankan semua alat.',
+  'premiumWhatUnlocks': 'Yang terbuka',
+  'premiumPerkAds': 'Tanpa iklan di semua layar',
+  'premiumPerkAlerts': 'Peringatan kurs tanpa batas',
+  'premiumPerkCharts': 'Riwayat grafik lengkap',
+  'premiumPerkExport': 'Ekspor anggaran perjalanan',
+  'premiumBuy': 'Beli Premium',
+  'premiumRestore': 'Pulihkan pembelian',
+  'premiumSandbox':
+      'Gunakan akun sandbox. Akun sandbox App Store dan penguji Google Play tidak ditagih.',
+  'premiumActive': 'Premium aktif',
+  'premiumUnlocked': 'Pembelian membuka ini di akun ini',
+  'premiumRestored': 'Pembelian dipulihkan',
+  'premiumNothing': 'Tidak ada pembelian lama untuk akun ini',
+  'premiumFailed':
+      'Pembelian tidak selesai. Periksa akun toko dan coba lagi.',
+  'premiumStoreUnavailable':
+      'Toko belum siap. Masuk dengan akun sandbox dan coba lagi.',
   'notNow': 'NANTI',
   'allowNotifications': 'IZINKAN NOTIFIKASI',
   'update': 'PERBARUI',
@@ -5846,6 +6069,25 @@ const Map<String, String> _it = <String, String>{
       'La cronologia giornaliera di questa coppia non è ancora pubblicata. Prova una valuta principale, un metallo o una criptovaluta.',
   'privacyPolicy': 'Informativa sulla privacy',
   'privacyPolicySub': 'Come Mob Apps Inc. usa i dati in questa app',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'Un acquisto toglie gli annunci e tiene tutti gli strumenti.',
+  'premiumWhatUnlocks': 'Cosa si sblocca',
+  'premiumPerkAds': 'Nessun annuncio',
+  'premiumPerkAlerts': 'Avvisi di cambio illimitati',
+  'premiumPerkCharts': 'Storico completo dei grafici',
+  'premiumPerkExport': 'Esporta il budget del viaggio',
+  'premiumBuy': 'Acquista Premium',
+  'premiumRestore': 'Ripristina acquisti',
+  'premiumSandbox':
+      'Usa un account sandbox. Gli account sandbox dell\'App Store e i tester di Google Play non vengono addebitati.',
+  'premiumActive': 'Premium è attivo',
+  'premiumUnlocked': 'L\'acquisto ha sbloccato questo su questo account',
+  'premiumRestored': 'Acquisti ripristinati',
+  'premiumNothing': 'Nessun acquisto precedente per questo account',
+  'premiumFailed':
+      'L\'acquisto non è riuscito. Controlla l\'account dello store e riprova.',
+  'premiumStoreUnavailable':
+      'Lo store non è ancora pronto. Accedi con un account sandbox e riprova.',
   'notNow': 'NON ORA',
   'allowNotifications': 'CONSENTI NOTIFICHE',
   'update': 'AGGIORNA',
@@ -6320,6 +6562,25 @@ const Map<String, String> _ru = <String, String>{
       'Дневная история для этой пары ещё не опубликована. Попробуйте основную валюту, металл или криптоактив.',
   'privacyPolicy': 'Политика конфиденциальности',
   'privacyPolicySub': 'Как Mob Apps Inc. использует данные в этом приложении',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': 'Одна покупка убирает рекламу и оставляет все инструменты.',
+  'premiumWhatUnlocks': 'Что открывается',
+  'premiumPerkAds': 'Без рекламы на всех экранах',
+  'premiumPerkAlerts': 'Безлимитные оповещения курса',
+  'premiumPerkCharts': 'Полная история графиков',
+  'premiumPerkExport': 'Экспорт бюджета поездки',
+  'premiumBuy': 'Купить Premium',
+  'premiumRestore': 'Восстановить покупки',
+  'premiumSandbox':
+      'Используйте песочницу. Песочница App Store и тестовые аккаунты Google Play не списывают деньги.',
+  'premiumActive': 'Premium включён',
+  'premiumUnlocked': 'Покупка открыла это на этом аккаунте',
+  'premiumRestored': 'Покупки восстановлены',
+  'premiumNothing': 'Для этого аккаунта прежняя покупка не найдена',
+  'premiumFailed':
+      'Покупка не завершилась. Проверьте аккаунт магазина и попробуйте снова.',
+  'premiumStoreUnavailable':
+      'Магазин ещё не готов. Войдите с аккаунтом песочницы и попробуйте снова.',
   'notNow': 'НЕ СЕЙЧАС',
   'allowNotifications': 'РАЗРЕШИТЬ УВЕДОМЛЕНИЯ',
   'update': 'ОБНОВИТЬ',
@@ -6794,6 +7055,25 @@ const Map<String, String> _ja = <String, String>{
       'このペアの日次履歴はまだ公開されていません。主要通貨、金属、または暗号資産をお試しください。',
   'privacyPolicy': 'プライバシーポリシー',
   'privacyPolicySub': 'Mob Apps Inc. がこのアプリでデータを使う方法',
+  'premiumTitle': 'CurrencyPro Premium',
+  'premiumLead': '1回の購入で広告が消え、すべてのツールが使えます。',
+  'premiumWhatUnlocks': '解除される内容',
+  'premiumPerkAds': 'すべての画面で広告なし',
+  'premiumPerkAlerts': '為替アラートが無制限',
+  'premiumPerkCharts': 'トレンドチャートの全履歴',
+  'premiumPerkExport': '旅行予算の書き出し',
+  'premiumBuy': 'プレミアムを購入',
+  'premiumRestore': '購入を復元',
+  'premiumSandbox':
+      'サンドボックスアカウントを使ってください。App Store のサンドボックスと Google Play のライセンステスターは請求されません。',
+  'premiumActive': 'プレミアムは有効です',
+  'premiumUnlocked': '購入でこのアカウントに次が解除されました',
+  'premiumRestored': '購入を復元しました',
+  'premiumNothing': 'このアカウントに以前の購入は見つかりませんでした',
+  'premiumFailed':
+      '購入を完了できませんでした。ストアのアカウントを確認して、もう一度お試しください。',
+  'premiumStoreUnavailable':
+      'ストアの準備ができていません。サンドボックスアカウントでログインして、もう一度お試しください。',
   'notNow': '後で',
   'allowNotifications': '通知を許可',
   'update': '更新',

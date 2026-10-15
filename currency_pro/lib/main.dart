@@ -10,6 +10,7 @@ import 'data/repositories/rates_repository.dart';
 import 'data/services/prefs_service.dart';
 import 'state/alerts_provider.dart';
 import 'state/clocks_provider.dart';
+import 'state/premium_controller.dart';
 import 'state/rates_provider.dart';
 import 'state/settings_provider.dart';
 import 'state/trips_provider.dart';
@@ -25,6 +26,10 @@ Future<void> main() async {
   final PrefsService prefs = await PrefsService.create();
   final RatesRepository repository = RatesRepository(prefs: prefs);
   final AdsService ads = AdsService(prefs);
+  final PremiumController premium = PremiumController(prefs);
+  await premium.start();
+  ads.setPremium(premium.isPremium);
+  premium.addListener(() => ads.setPremium(premium.isPremium));
   try {
     await ads.initialize();
   } catch (e) {
@@ -61,6 +66,7 @@ Future<void> main() async {
         ChangeNotifierProvider<ClocksProvider>(
           create: (_) => ClocksProvider(prefs),
         ),
+        ChangeNotifierProvider<PremiumController>.value(value: premium),
       ],
       child: const CurrencyProApp(),
     ),

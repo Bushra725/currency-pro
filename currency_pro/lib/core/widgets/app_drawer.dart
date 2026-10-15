@@ -76,6 +76,8 @@ class AppDrawer extends StatelessWidget {
             _item(context, p, Icons.public, l10n.worldClock, Routes.clock,
                 nextTint()),
             _group(p, l10n.gInfo),
+            _item(context, p, Icons.workspace_premium_outlined,
+                l10n.premiumTitle, Routes.premium, nextTint()),
             _item(context, p, Icons.settings_outlined, l10n.appSettings,
                 Routes.settings, nextTint()),
             _item(context, p, Icons.language_outlined, l10n.language,
