@@ -28,28 +28,33 @@ class AlertNotifications {
   static Future<void> initialize() async {
     if (_ready) return;
     try {
-      await _bind(_icon);
-    } catch (e) {
-      debugPrint('Alert icon $_icon missing, falling back: $e');
-      await _bind(_fallbackIcon);
-    }
+      try {
+        await _bind(_icon);
+      } catch (e) {
+        debugPrint('Alert icon $_icon missing, falling back: $e');
+        await _bind(_fallbackIcon);
+      }
 
-    final AndroidFlutterLocalNotificationsPlugin? androidPlugin = _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        channelId,
-        channelName,
-        description: channelDescription,
-        importance: Importance.max,
-        playSound: true,
-        enableVibration: true,
-        showBadge: true,
-      ),
-    );
-    await androidPlugin?.requestNotificationsPermission();
-    _ready = true;
+      final AndroidFlutterLocalNotificationsPlugin? androidPlugin = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await androidPlugin?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          channelId,
+          channelName,
+          description: channelDescription,
+          importance: Importance.max,
+          playSound: true,
+          enableVibration: true,
+          showBadge: true,
+        ),
+      );
+      await androidPlugin?.requestNotificationsPermission();
+      _ready = true;
+    } catch (e) {
+      debugPrint('Notification init failed: $e');
+    }
   }
 
   static Future<void> _bind(String icon) async {
@@ -57,10 +62,13 @@ class AlertNotifications {
     await _plugin.initialize(
       InitializationSettings(
         android: AndroidInitializationSettings(icon),
+        // Permission is requested only when the user taps enable. Asking
+        // here as well raced that tap and the plugin then threw
+        // ERROR_ALREADY_REQUESTING_PERMISSIONS.
         iOS: const DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
         ),
       ),
     );
@@ -84,8 +92,9 @@ class AlertNotifications {
           ? Fmt.smart(alert.targetRate, maxDecimals: 6)
           : Fmt.smart(current, maxDecimals: 6);
       final String targetText = Fmt.smart(alert.targetRate, maxDecimals: 6);
-      final String verb =
-          alert.direction == AlertDirection.above ? 'rose to' : 'fell to';
+      final String verb = alert.direction == AlertDirection.above
+          ? 'rose to'
+          : 'fell to';
       try {
         await _plugin.show(
           alert.id.hashCode & 0x7fffffff,

@@ -70,9 +70,9 @@ class _MetalsPageState extends State<MetalsPage>
 
   Future<void> _saveHoldings() async {
     await context.read<PrefsService>().setString(
-          _assetsKey,
-          jsonEncode(_holdings),
-        );
+      _assetsKey,
+      jsonEncode(_holdings),
+    );
   }
 
   @override
@@ -116,11 +116,7 @@ class _MetalsPageState extends State<MetalsPage>
           Expanded(
             child: TabBarView(
               controller: _tabs,
-              children: <Widget>[
-                _priceTab(p),
-                _crossTab(p),
-                _assetsTab(p),
-              ],
+              children: <Widget>[_priceTab(p), _crossTab(p), _assetsTab(p)],
             ),
           ),
         ],
@@ -169,8 +165,11 @@ class _MetalsPageState extends State<MetalsPage>
                               color: p.textPrimary,
                             ),
                           ),
-                          Icon(Icons.expand_more,
-                              size: 18, color: p.textSecondary),
+                          Icon(
+                            Icons.expand_more,
+                            size: 18,
+                            color: p.textSecondary,
+                          ),
                         ],
                       ),
                     ),
@@ -187,8 +186,10 @@ class _MetalsPageState extends State<MetalsPage>
                       child: AppDropdown<String>(
                         value: _unit,
                         entries: _weightUnits.keys
-                            .map((String u) =>
-                                AppDropdownEntry<String>(value: u, label: u))
+                            .map(
+                              (String u) =>
+                                  AppDropdownEntry<String>(value: u, label: u),
+                            )
                             .toList(growable: false),
                         onChanged: (String v) => setState(() => _unit = v),
                       ),
@@ -200,8 +201,13 @@ class _MetalsPageState extends State<MetalsPage>
           ),
         ),
         const SizedBox(height: 12),
-        ...<String>['USD', 'BTC', 'XAU', 'XAG', 'ETH']
-            .map((String code) => _assetCard(p, settings, rates, base, code)),
+        ...<String>[
+          'USD',
+          'BTC',
+          'XAU',
+          'XAG',
+          'ETH',
+        ].map((String code) => _assetCard(p, settings, rates, base, code)),
       ],
     );
   }
@@ -269,7 +275,7 @@ class _MetalsPageState extends State<MetalsPage>
                     shown == null
                         ? l10n.unavailable
                         : '${settings.format(shown, decimals: shown < 10 ? 4 : 2)} '
-                            '${base.code}',
+                              '${base.code}',
                     style: TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.w800,
@@ -304,8 +310,7 @@ class _MetalsPageState extends State<MetalsPage>
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         l10n.spotSource,
-                        style:
-                            TextStyle(fontSize: 9.5, color: p.textSecondary),
+                        style: TextStyle(fontSize: 9.5, color: p.textSecondary),
                       ),
                     ),
                 ],
@@ -376,14 +381,12 @@ class _MetalsPageState extends State<MetalsPage>
                           row == col
                               ? '1'
                               : (value == null
-                                  ? '—'
-                                  : Fmt.smart(value, maxDecimals: 6)),
+                                    ? '—'
+                                    : Fmt.smart(value, maxDecimals: 6)),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 10.5,
-                            color: row == col
-                                ? p.textSecondary
-                                : p.textPrimary,
+                            color: row == col ? p.textSecondary : p.textPrimary,
                           ),
                         ),
                       );
@@ -447,13 +450,18 @@ class _MetalsPageState extends State<MetalsPage>
         else
           ..._holdings.entries.map((MapEntry<String, double> entry) {
             final Currency c = CurrencyLookup.of(entry.key);
-            final double? value =
-                rates.convert(entry.value, entry.key, base.code);
+            final double? value = rates.convert(
+              entry.value,
+              entry.key,
+              base.code,
+            );
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: SectionCard(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 child: Row(
                   children: <Widget>[
                     FlagAvatar(c, size: 26),
@@ -473,7 +481,9 @@ class _MetalsPageState extends State<MetalsPage>
                           Text(
                             c.name,
                             style: TextStyle(
-                                fontSize: 10.5, color: p.textSecondary),
+                              fontSize: 10.5,
+                              color: p.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -489,8 +499,11 @@ class _MetalsPageState extends State<MetalsPage>
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.delete_outline,
-                          size: 18, color: p.textSecondary),
+                      icon: Icon(
+                        Icons.delete_outline,
+                        size: 18,
+                        color: p.textSecondary,
+                      ),
                       onPressed: () {
                         setState(() => _holdings.remove(entry.key));
                         _saveHoldings();
@@ -519,43 +532,18 @@ class _MetalsPageState extends State<MetalsPage>
     );
     if (picked == null || !mounted) return;
 
-    final TextEditingController controller = TextEditingController(
-      text: _holdings[picked.code]?.toString() ?? '',
-    );
-
     final double? qty = await showDialog<double>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        final L10n dialogL10n = L10n.read(dialogContext);
-        return AlertDialog(
-          title: Text(dialogL10n.amountOf(picked.code)),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              hintText: picked.isMetal
-                  ? dialogL10n.troyOunces
-                  : dialogL10n.quantity,
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(dialogL10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(Fmt.parse(controller.text)),
-              child: Text(dialogL10n.save),
-            ),
-          ],
-        );
-      },
+      builder: (BuildContext dialogContext) => _HoldingAmountDialog(
+        code: picked.code,
+        initial: _holdings[picked.code]?.toString() ?? '',
+        hint: picked.isMetal
+            ? L10n.read(dialogContext).troyOunces
+            : L10n.read(dialogContext).quantity,
+      ),
     );
 
-    controller.dispose();
-    if (qty == null) return;
+    if (qty == null || !qty.isFinite) return;
     setState(() {
       if (qty <= 0) {
         _holdings.remove(picked.code);
@@ -564,5 +552,57 @@ class _MetalsPageState extends State<MetalsPage>
       }
     });
     await _saveHoldings();
+  }
+}
+
+class _HoldingAmountDialog extends StatefulWidget {
+  const _HoldingAmountDialog({
+    required this.code,
+    required this.initial,
+    required this.hint,
+  });
+
+  final String code;
+  final String initial;
+  final String hint;
+
+  @override
+  State<_HoldingAmountDialog> createState() => _HoldingAmountDialogState();
+}
+
+class _HoldingAmountDialogState extends State<_HoldingAmountDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final L10n l10n = L10n.read(context);
+    return AlertDialog(
+      title: Text(l10n.amountOf(widget.code)),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(hintText: widget.hint),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.of(context).pop(Fmt.parse(_controller.text)),
+          child: Text(l10n.save),
+        ),
+      ],
+    );
   }
 }

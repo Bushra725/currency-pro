@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -66,7 +67,13 @@ class AppTheme {
       scaffoldBackgroundColor: p.background,
       canvasColor: p.surface,
       dividerColor: p.outline,
-      splashFactory: InkSparkle.splashFactory,
+      // InkSparkle's shader exceeds the iOS simulator's uniform limit, so a
+      // tap on any button (enable notifications, add expense, and the rest)
+      // fails the render pipeline. Android keeps the sparkle; everywhere
+      // else uses the Material ripple.
+      splashFactory: !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+          ? InkSparkle.splashFactory
+          : InkRipple.splashFactory,
       textTheme: text,
       extensions: <ThemeExtension<dynamic>>[p],
       appBarTheme: AppBarTheme(

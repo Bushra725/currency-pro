@@ -46,6 +46,7 @@ class TripsProvider extends ChangeNotifier {
   Future<void> addExpense(String tripId, Expense expense) async {
     final Trip? trip = byId(tripId);
     if (trip == null) return;
+    if (!expense.amount.isFinite) return;
     trip.expenses = <Expense>[expense, ...trip.expenses];
     notifyListeners();
     await _save();
@@ -54,8 +55,9 @@ class TripsProvider extends ChangeNotifier {
   Future<void> removeExpense(String tripId, String expenseId) async {
     final Trip? trip = byId(tripId);
     if (trip == null) return;
-    trip.expenses =
-        trip.expenses.where((Expense e) => e.id != expenseId).toList();
+    trip.expenses = trip.expenses
+        .where((Expense e) => e.id != expenseId)
+        .toList();
     notifyListeners();
     await _save();
   }
@@ -68,6 +70,11 @@ class TripsProvider extends ChangeNotifier {
     await _save();
   }
 
-  Future<void> _save() =>
-      _prefs.setString(PrefsService.kTrips, Trip.encodeList(_items));
+  Future<void> _save() async {
+    try {
+      await _prefs.setString(PrefsService.kTrips, Trip.encodeList(_items));
+    } catch (e) {
+      debugPrint('Could not save trips: $e');
+    }
+  }
 }
