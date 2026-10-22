@@ -29,7 +29,7 @@ class AdsService extends ChangeNotifier {
   bool _loadingRewardedInterstitial = false;
   bool _loadingAppOpen = false;
   bool _showingFullscreen = false;
-  bool _initialized = false;
+  Future<void>? _initFuture;
   bool _failed = false;
   bool _enabled = false;
   int _featureExits = 0;
@@ -117,9 +117,16 @@ class AdsService extends ChangeNotifier {
         : AppConfig.iosAppOpenAdUnitId;
   }
 
-  Future<void> initialize() async {
-    if (_initialized || !isSupported) return;
-    _initialized = true;
+  Future<void> initialize() {
+    if (!isSupported) return Future<void>.value();
+    final Future<void>? existing = _initFuture;
+    if (existing != null) return existing;
+    final Future<void> created = _initializeSdk();
+    _initFuture = created;
+    return created;
+  }
+
+  Future<void> _initializeSdk() async {
     try {
       // Test-device IDs must be registered before SDK init, otherwise
       // production units return Error 3 (no fill) on a sideloaded APK.
@@ -132,6 +139,7 @@ class AdsService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Mobile Ads failed to initialize: $e');
       _failed = true;
+      _initFuture = null;
       notifyListeners();
     }
   }
@@ -180,6 +188,8 @@ class AdsService extends ChangeNotifier {
   Future<void> loadBanner({required int width}) async {
     if (!isSupported || adsMuted || _loadingBanner || _banner != null) return;
     if (width <= 0) return;
+    await initialize();
+    if (!isSupported || adsMuted || _loadingBanner || _banner != null) return;
     _lastBannerWidth = width;
     _loadingBanner = true;
     _failed = false;

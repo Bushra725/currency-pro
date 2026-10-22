@@ -57,10 +57,12 @@ class AlertNotifications {
     await _plugin.initialize(
       InitializationSettings(
         android: AndroidInitializationSettings(icon),
+        // Ask later, from the onboarding and alert screens. Requesting
+        // here runs before the app is active and crashes on older iOS.
         iOS: const DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
         ),
       ),
     );

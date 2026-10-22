@@ -144,10 +144,23 @@ class _ConverterPageState extends State<ConverterPage> {
 
   Future<void> _send() async {
     _feedback();
-    await Share.share(
-      _shareText(),
-      subject: L10n.read(context).currencyConversion,
+    // iOS presents the share sheet as a popover. An empty origin crashes
+    // that presentation on iPad and on older iPhones in a wide window.
+    final Size screen = MediaQuery.sizeOf(context);
+    final Rect origin = Rect.fromCenter(
+      center: Offset(screen.width / 2, screen.height - 48),
+      width: 2,
+      height: 2,
     );
+    try {
+      await Share.share(
+        _shareText(),
+        subject: L10n.read(context).currencyConversion,
+        sharePositionOrigin: origin,
+      );
+    } catch (e) {
+      debugPrint('Share failed: $e');
+    }
   }
 
   Future<void> _pick({required bool top}) async {
