@@ -40,6 +40,8 @@ class AdsService extends ChangeNotifier {
 
   bool _sampleFallback = false;
   int _lastBannerWidth = 320;
+  static bool _iosBannerSecondary = false;
+  static int _iosInterstitialSlot = 0;
 
   BannerAd? get banner => adsMuted ? null : _banner;
   bool get isReady => banner != null;
@@ -99,16 +101,18 @@ class AdsService extends ChangeNotifier {
 
   static String get bannerAdUnitId {
     if (_forceSample) return AppConfig.testBannerAdUnitId;
-    return _android
-        ? AppConfig.androidBannerAdUnitId
+    if (_android) return AppConfig.androidBannerAdUnitId;
+    return _iosBannerSecondary
+        ? AppConfig.iosBannerAdUnitId2
         : AppConfig.iosBannerAdUnitId;
   }
 
   static String get interstitialAdUnitId {
     if (_forceSample) return AppConfig.testInterstitialAdUnitId;
-    return _android
-        ? AppConfig.androidInterstitialAdUnitId
-        : AppConfig.iosInterstitialAdUnitId;
+    if (_android) return AppConfig.androidInterstitialAdUnitId;
+    return _iosInterstitialSlot.isEven
+        ? AppConfig.iosInterstitialAdUnitId
+        : AppConfig.iosInterstitialAdUnitId2;
   }
 
   static String get rewardedAdUnitId {
@@ -253,6 +257,14 @@ class AdsService extends ChangeNotifier {
 
   bool _handleNoFill(LoadAdError error, String label) {
     if (error.code != 3 || _forceSample) return false;
+    if (!_android && label == 'Banner' && !_iosBannerSecondary) {
+      debugPrint('iOS Banner 1 no-fill; loading Banner 2');
+      _iosBannerSecondary = true;
+      Future<void>.delayed(const Duration(milliseconds: 250), () {
+        loadBanner(width: _lastBannerWidth);
+      });
+      return true;
+    }
     debugPrint('$label no-fill on live units; loading Google sample ads');
     retryWithSampleAds();
     return true;
@@ -277,8 +289,10 @@ class AdsService extends ChangeNotifier {
     if (_loadingInterstitial || _interstitial != null) return;
     _loadingInterstitial = true;
 
+    final String unitId = interstitialAdUnitId;
+    if (!_android) _iosInterstitialSlot++;
     await InterstitialAd.load(
-      adUnitId: interstitialAdUnitId,
+      adUnitId: unitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (InterstitialAd ad) {

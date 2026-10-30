@@ -14,6 +14,16 @@ class AppConfig {
   static const String privacyPolicyUrl =
       'https://sites.google.com/view/mob-apps-inc/privacy-policy';
 
+  /// Android Play package. iOS uses [iosBundleId].
+  static const String androidApplicationId =
+      'com.mai.calculator.currency.converter.app';
+  static const String iosBundleId = 'com.ol.currency.converter.app';
+
+  /// Adjust iOS app / event tokens for App Store attribution.
+  static const String iosAdjustAppToken = 'ojq64y7uov7k';
+  static const String iosAdjustStartTrialEvent = '5y887z';
+  static const String iosAdjustAdRevenueEvent = 'w2v54g';
+
   /// Non-consumable product. Create this same id in App Store Connect and
   /// Google Play, then buy it with a sandbox or license-tester account.
   static const String premiumProductId = 'currencypro_premium';
@@ -177,44 +187,49 @@ class AppConfig {
   // Ads (AdMob)
   // ---------------------------------------------------------------------
   //
-  // Production units from AdMob app ca-app-pub-9297250663056879~6205423802.
-  // google-services.json (package com.mai.calculator.currency.converter.app)
-  // is applied by the Google Services Gradle plugin.
+  // Android production units: AdMob app ~6205423802, package
+  // com.mai.calculator.currency.converter.app (google-services.json).
+  // iOS production units: AdMob app ~5715532468, bundle
+  // com.ol.currency.converter.app (GoogleService-Info.plist).
 
   static const String androidAdMobAppId =
       'ca-app-pub-9297250663056879~6205423802';
   static const String iosAdMobAppId =
-      'ca-app-pub-3940256099942544~1458002511';
+      'ca-app-pub-9297250663056879~5715532468';
 
   static const String androidBannerAdUnitId =
       'ca-app-pub-9297250663056879/1893298457';
   static const String iosBannerAdUnitId =
-      'ca-app-pub-3940256099942544/2435281174';
+      'ca-app-pub-9297250663056879/2704345416';
+  static const String iosBannerAdUnitId2 =
+      'ca-app-pub-9297250663056879/6459757598';
 
   static const String androidInterstitialAdUnitId =
       'ca-app-pub-9297250663056879/4421628563';
   static const String iosInterstitialAdUnitId =
-      'ca-app-pub-3940256099942544/4411468910';
+      'ca-app-pub-9297250663056879/3151067978';
+  static const String iosInterstitialAdUnitId2 =
+      'ca-app-pub-9297250663056879/9078182078';
 
   static const String androidRewardedAdUnitId =
       'ca-app-pub-9297250663056879/9482383550';
   static const String iosRewardedAdUnitId =
-      'ca-app-pub-3940256099942544/1712485313';
+      'ca-app-pub-9297250663056879/6452018735';
 
   static const String androidRewardedInterstitialAdUnitId =
       'ca-app-pub-9297250663056879/8561640933';
   static const String iosRewardedInterstitialAdUnitId =
-      'ca-app-pub-3940256099942544/6978759866';
+      'ca-app-pub-9297250663056879/6065005925';
 
   static const String androidNativeAdUnitId =
       'ca-app-pub-9297250663056879/6411413373';
   static const String iosNativeAdUnitId =
-      'ca-app-pub-3940256099942544/3986624511';
+      'ca-app-pub-9297250663056879/6587750101';
 
   static const String androidAppOpenAdUnitId =
       'ca-app-pub-9297250663056879/6954053441';
   static const String iosAppOpenAdUnitId =
-      'ca-app-pub-3940256099942544/5575463023';
+      'ca-app-pub-9297250663056879/5823343673';
 
   static const String testBannerAdUnitId =
       'ca-app-pub-3940256099942544/9214589741';
