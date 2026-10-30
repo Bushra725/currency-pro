@@ -19,6 +19,8 @@
 			<key>CFBundleIconFiles</key>
 			<array>
 				<string>AppIcon</string>
+				<string>Icon-60</string>
+				<string>Icon</string>
 			</array>
 		</dict>
 	</dict>
