@@ -1,19 +1,20 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 
+import '../app_config.dart';
 import '../theme/app_palette.dart';
 import 'ads_service.dart';
 
-/// In-feed native ad that matches the app cards.
+/// In-feed native ad. iOS uses a custom factory so MediaView is at least
+/// 120x120 pt (AdMob's minimum for video). Android uses the medium template.
 class NativeAdCard extends StatefulWidget {
   const NativeAdCard({
     super.key,
-    this.template = TemplateType.small,
     this.height,
   });
 
-  final TemplateType template;
   final double? height;
 
   @override
@@ -25,6 +26,9 @@ class _NativeAdCardState extends State<NativeAdCard> {
   bool _loaded = false;
   bool _failed = false;
   bool _retriedSample = false;
+
+  static bool get _ios =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
   @override
   void initState() {
@@ -42,55 +46,63 @@ class _NativeAdCardState extends State<NativeAdCard> {
     _loaded = false;
 
     final AppPalette p = context.palette;
-    final NativeAd ad = NativeAd(
-      adUnitId: AdsService.nativeAdUnitId,
-      request: const AdRequest(),
-      listener: NativeAdListener(
-        onAdLoaded: (Ad ad) {
-          if (!mounted) {
-            ad.dispose();
-            return;
-          }
-          setState(() {
-            _loaded = true;
-            _failed = false;
-          });
-        },
-        onAdFailedToLoad: (Ad ad, LoadAdError error) {
-          debugPrint('Native ad failed: $error');
+    final NativeAdListener listener = NativeAdListener(
+      onAdLoaded: (Ad ad) {
+        if (!mounted) {
           ad.dispose();
-          if (!mounted) return;
-          if (error.code == 3) {
-            context.read<AdsService>().retryWithSampleAds();
-          }
-          setState(() => _failed = true);
-        },
-      ),
-      nativeTemplateStyle: NativeTemplateStyle(
-        templateType: widget.template,
-        mainBackgroundColor: p.surface,
-        cornerRadius: 14,
-        callToActionTextStyle: NativeTemplateTextStyle(
-          textColor: p.onPrimary,
-          backgroundColor: p.primary,
-          style: NativeTemplateFontStyle.bold,
-          size: 13,
-        ),
-        primaryTextStyle: NativeTemplateTextStyle(
-          textColor: p.textPrimary,
-          style: NativeTemplateFontStyle.bold,
-          size: 14,
-        ),
-        secondaryTextStyle: NativeTemplateTextStyle(
-          textColor: p.textSecondary,
-          size: 12,
-        ),
-        tertiaryTextStyle: NativeTemplateTextStyle(
-          textColor: p.textSecondary,
-          size: 11,
-        ),
-      ),
+          return;
+        }
+        setState(() {
+          _loaded = true;
+          _failed = false;
+        });
+      },
+      onAdFailedToLoad: (Ad ad, LoadAdError error) {
+        debugPrint('Native ad failed: $error');
+        ad.dispose();
+        if (!mounted) return;
+        if (error.code == 3) {
+          context.read<AdsService>().retryWithSampleAds();
+        }
+        setState(() => _failed = true);
+      },
     );
+    final NativeAd ad = _ios
+        ? NativeAd(
+            adUnitId: AdsService.nativeAdUnitId,
+            factoryId: 'native_media',
+            request: const AdRequest(),
+            listener: listener,
+          )
+        : NativeAd(
+            adUnitId: AdsService.nativeAdUnitId,
+            request: const AdRequest(),
+            listener: listener,
+            nativeTemplateStyle: NativeTemplateStyle(
+              templateType: TemplateType.medium,
+              mainBackgroundColor: p.surface,
+              cornerRadius: 14,
+              callToActionTextStyle: NativeTemplateTextStyle(
+                textColor: p.onPrimary,
+                backgroundColor: p.primary,
+                style: NativeTemplateFontStyle.bold,
+                size: 13,
+              ),
+              primaryTextStyle: NativeTemplateTextStyle(
+                textColor: p.textPrimary,
+                style: NativeTemplateFontStyle.bold,
+                size: 14,
+              ),
+              secondaryTextStyle: NativeTemplateTextStyle(
+                textColor: p.textSecondary,
+                size: 12,
+              ),
+              tertiaryTextStyle: NativeTemplateTextStyle(
+                textColor: p.textSecondary,
+                size: 11,
+              ),
+            ),
+          );
     _ad = ad;
     ad.load();
   }
@@ -119,8 +131,7 @@ class _NativeAdCardState extends State<NativeAdCard> {
       return const SizedBox.shrink();
     }
 
-    final double height = widget.height ??
-        (widget.template == TemplateType.medium ? 280 : 118);
+    final double height = widget.height ?? AppConfig.nativeAdCardHeight;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: ClipRRect(

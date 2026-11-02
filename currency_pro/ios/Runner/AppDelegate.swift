@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import google_mobile_ads
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -7,11 +8,21 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
+      self,
+      factoryId: "native_media",
+      nativeAdFactory: CurrencyNativeAdFactory()
+    )
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
+      engineBridge.pluginRegistry,
+      factoryId: "native_media",
+      nativeAdFactory: CurrencyNativeAdFactory()
+    )
     let messenger = engineBridge.pluginRegistry
       .registrar(forPlugin: "CurrencyProNative")!
       .messenger()

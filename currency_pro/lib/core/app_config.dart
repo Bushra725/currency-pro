@@ -251,6 +251,12 @@ class AppConfig {
   /// Reserved height of the bottom banner slot, in logical pixels.
   static const double bannerAdSlotHeight = 50;
 
+  /// AdMob iOS native video requires MediaView of at least 120x120 pt.
+  static const double nativeAdMediaMinSize = 120;
+
+  /// Card height that leaves MediaView at [nativeAdMediaMinSize] plus copy.
+  static const double nativeAdCardHeight = 320;
+
   /// How long a rewarded video hides ads.
   static const Duration rewardedAdFree = Duration(hours: 1);
 
