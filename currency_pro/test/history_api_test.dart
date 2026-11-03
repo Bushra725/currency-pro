@@ -50,6 +50,16 @@ void main() {
     expect(result.points.last.value, closeTo(277.03, 0.001));
     api.dispose();
   });
+
+  test('an ECB pair loads from frankfurter.app without the archive', () async {
+    final HistoryApi api = HistoryApi(client: _FrankfurterClient());
+    final HistorySeries result = await api.series('USD', 'GBP', 30);
+
+    expect(result.failed, isFalse);
+    expect(result.points.length, greaterThanOrEqualTo(2));
+    expect(result.points.last.value, closeTo(0.79, 0.001));
+    api.dispose();
+  });
 }
 
 class _ArchiveClient extends http.BaseClient {
@@ -118,6 +128,32 @@ class _ChartClient extends http.BaseClient {
               },
             },
           ],
+        },
+      });
+    }
+    return _json(<String, dynamic>{'message': 'not found'}, status: 404);
+  }
+
+  http.StreamedResponse _json(Map<String, dynamic> body, {int status = 200}) {
+    final List<int> bytes = utf8.encode(jsonEncode(body));
+    return http.StreamedResponse(
+      Stream<List<int>>.value(bytes),
+      status,
+      headers: <String, String>{'content-type': 'application/json'},
+    );
+  }
+}
+
+class _FrankfurterClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final String url = request.url.toString();
+    if (url.contains('api.frankfurter.app') && url.contains('from=USD')) {
+      return _json(<String, dynamic>{
+        'rates': <String, dynamic>{
+          '2026-09-01': <String, double>{'GBP': 0.78},
+          '2026-09-15': <String, double>{'GBP': 0.785},
+          '2026-10-01': <String, double>{'GBP': 0.79},
         },
       });
     }

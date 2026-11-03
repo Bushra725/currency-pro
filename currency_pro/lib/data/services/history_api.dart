@@ -58,9 +58,10 @@ class HistoryApi {
     }
   }
 
-  /// The currency archive is tried first because it is the same host the
-  /// live rate table already uses, including currencies outside the ECB
-  /// basket. Yahoo and the ECB feed cover gaps in that archive.
+  /// Fast single-request feeds (ECB, then Yahoo) are tried before the
+  /// dated CDN archive. The archive issues many parallel requests and
+  /// used to run first, so a slow day-file could time out the whole
+  /// load and the chart called a working connection a network error.
   Future<List<RatePoint>> _bestSeries(String from, String to, int days) async {
     final bool fromCrypto = AppConfig.coinGeckoIds.containsKey(from);
     final bool toCrypto = AppConfig.coinGeckoIds.containsKey(to);
@@ -87,13 +88,18 @@ class HistoryApi {
       if (crypto.length >= 2) return crypto;
     }
 
-    final List<RatePoint> archived = await attempt(
-      () => _archiveSeries(from, to, days),
-    );
-    if (archived.length >= 2) return _tail(archived, days);
+    if (ecbSupported.contains(from) && ecbSupported.contains(to)) {
+      final List<RatePoint> ecb =
+          await attempt(() => _ecbSeries(from, to, days));
+      if (ecb.length >= 2) return ecb;
+    }
 
     final List<RatePoint> direct = await attempt(
-      () => _yahooSymbol(_fxSymbol(from, to), days, invert: _invertYahoo(from, to)),
+      () => _yahooSymbol(
+        _fxSymbol(from, to),
+        days,
+        invert: _invertYahoo(from, to),
+      ),
     );
     if (direct.length >= 2) return _tail(direct, days);
 
@@ -112,14 +118,10 @@ class HistoryApi {
       if (crossed.length >= 2) return _tail(crossed, days);
     }
 
-    // An unsupported pair returns no points without contacting the ECB.
-    // That must not count as a successful response, or a failed archive
-    // looks like "no history" instead of a connection problem.
-    if (ecbSupported.contains(from) && ecbSupported.contains(to)) {
-      final List<RatePoint> ecb =
-          await attempt(() => _ecbSeries(from, to, days));
-      if (ecb.length >= 2) return ecb;
-    }
+    final List<RatePoint> archived = await attempt(
+      () => _archiveSeries(from, to, days),
+    );
+    if (archived.length >= 2) return _tail(archived, days);
 
     if (!reachedHost && lastError != null) {
       throw lastError!;
@@ -149,7 +151,7 @@ class HistoryApi {
 
     Object? failure;
     final List<RatePoint> points = <RatePoint>[];
-    const int batchSize = 6;
+    const int batchSize = 3;
     for (int start = 0; start < dates.length; start += batchSize) {
       final int endIndex = start + batchSize > dates.length
           ? dates.length
@@ -184,7 +186,7 @@ class HistoryApi {
         final http.Response res = await AppHttp.get(
           _client,
           Uri.parse(url),
-          timeout: const Duration(seconds: 12),
+          timeout: const Duration(seconds: 6),
         );
         if (res.statusCode == 404) continue;
         if (res.statusCode != 200) {
@@ -241,6 +243,12 @@ class HistoryApi {
     final http.Response res = await AppHttp.get(
       _client,
       Uri.parse(AppConfig.yahooChart(symbol, days)),
+      timeout: const Duration(seconds: 10),
+      extraHeaders: const <String, String>{
+        'User-Agent':
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) '
+                'AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+      },
     );
     if (res.statusCode == 404) return <RatePoint>[];
     if (res.statusCode != 200) {
@@ -318,19 +326,31 @@ class HistoryApi {
         '${x.month.toString().padLeft(2, '0')}-'
         '${x.day.toString().padLeft(2, '0')}';
 
-    Future<http.Response> getSeries(String url) =>
-        AppHttp.get(_client, Uri.parse(url));
-
-    http.Response res = await getSeries(
+    final List<String> urls = <String>[
+      '${AppConfig.frankfurterAppBase}/${isoDate(start)}..${isoDate(end)}'
+          '?from=$from&to=$to',
       AppConfig.frankfurterSeries(from, to, start, end),
-    );
-    if (res.statusCode != 200) {
-      final String alt =
-          '${AppConfig.frankfurterAppBase}/${isoDate(start)}..${isoDate(end)}?from=$from&to=$to';
-      res = await getSeries(alt);
+    ];
+    http.Response? res;
+    Object? error;
+    for (final String url in urls) {
+      try {
+        final http.Response candidate = await AppHttp.get(
+          _client,
+          Uri.parse(url),
+          timeout: const Duration(seconds: 10),
+        );
+        if (candidate.statusCode == 200) {
+          res = candidate;
+          break;
+        }
+        error = StateError('Chart history request was rejected');
+      } catch (e) {
+        error = e;
+      }
     }
-    if (res.statusCode != 200) {
-      throw StateError('Chart history request was rejected');
+    if (res == null) {
+      throw error ?? StateError('Chart history request was rejected');
     }
 
     final body = jsonDecode(res.body) as Map<String, dynamic>;

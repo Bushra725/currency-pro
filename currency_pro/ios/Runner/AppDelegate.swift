@@ -8,11 +8,6 @@ import google_mobile_ads
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
-      self,
-      factoryId: "native_media",
-      nativeAdFactory: CurrencyNativeAdFactory()
-    )
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

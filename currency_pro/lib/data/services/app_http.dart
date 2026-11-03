@@ -17,9 +17,13 @@ class AppHttp {
     http.Client client,
     Uri uri, {
     Duration? timeout,
+    Map<String, String>? extraHeaders,
   }) {
+    final Map<String, String> next = extraHeaders == null
+        ? headers
+        : <String, String>{...headers, ...extraHeaders};
     return client
-        .get(uri, headers: headers)
+        .get(uri, headers: next)
         .timeout(timeout ?? AppConfig.requestTimeout);
   }
 }

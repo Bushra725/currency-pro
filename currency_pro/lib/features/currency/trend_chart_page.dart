@@ -57,31 +57,38 @@ class _TrendChartPageState extends State<TrendChartPage> {
       _error = null;
     });
     try {
-      final HistorySeries result =
-          await _api.series(_from, _to, _range.days);
+      HistorySeries result = await _api.series(_from, _to, _range.days);
+      if (result.failed || result.points.length < 2) {
+        result = await _api.series(_from, _to, _range.days);
+      }
       if (!mounted) return;
+      final RatesProvider rates = context.read<RatesProvider>();
+      final bool online = rates.hasData && !rates.isOffline;
       setState(() {
         _loading = false;
-        if (result.failed) {
-          _points = <RatePoint>[];
-          _error = _ChartError.network;
-        } else if (result.points.length < 2) {
-          _points = <RatePoint>[];
-          // The hosts answered, but this pair has no daily series. That is
-          // not a connection problem.
-          _error = _ChartError.unsupportedPair;
-        } else {
+        if (result.points.length >= 2) {
           _points = result.points;
           _error = null;
+        } else if (result.failed && !online) {
+          _points = <RatePoint>[];
+          _error = _ChartError.network;
+        } else {
+          _points = <RatePoint>[];
+          // Hosts answered, or live rates already prove the phone is
+          // online. Missing history is not a dropped connection.
+          _error = _ChartError.unsupportedPair;
         }
       });
     } catch (_) {
       debugPrint('Trend chart load failed for $_from/$_to');
       if (!mounted) return;
+      final RatesProvider rates = context.read<RatesProvider>();
       setState(() {
         _points = <RatePoint>[];
         _loading = false;
-        _error = _ChartError.network;
+        _error = rates.hasData && !rates.isOffline
+            ? _ChartError.unsupportedPair
+            : _ChartError.network;
       });
     }
   }
@@ -238,20 +245,17 @@ class _TrendChartPageState extends State<TrendChartPage> {
                                 color: p.textSecondary,
                               ),
                             ),
-                            if (_error == _ChartError.network) ...<Widget>[
-                              const SizedBox(height: 14),
-                              FilledButton.icon(
-                                onPressed: _load,
-                                icon: const Icon(Icons.refresh_rounded,
-                                    size: 17),
-                                label: Text(l10n.retry),
-                                style: FilledButton.styleFrom(
-                                  minimumSize: const Size(0, 40),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 18),
-                                ),
+                            const SizedBox(height: 14),
+                            FilledButton.icon(
+                              onPressed: _load,
+                              icon: const Icon(Icons.refresh_rounded, size: 17),
+                              label: Text(l10n.retry),
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size(0, 40),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 18),
                               ),
-                            ],
+                            ),
                           ],
                         ),
                       ),

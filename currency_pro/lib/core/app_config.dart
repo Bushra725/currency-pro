@@ -254,8 +254,10 @@ class AppConfig {
   /// AdMob iOS native video requires MediaView of at least 120x120 pt.
   static const double nativeAdMediaMinSize = 120;
 
-  /// Card height that leaves MediaView at [nativeAdMediaMinSize] plus copy.
-  static const double nativeAdCardHeight = 320;
+  /// Google's medium native template is 320×355. The iOS factory MediaView
+  /// is 200 pt tall, so the Flutter card must be at least this high or the
+  /// platform view shrinks the video below AdMob's 120 pt minimum.
+  static const double nativeAdCardHeight = 355;
 
   /// How long a rewarded video hides ads.
   static const Duration rewardedAdFree = Duration(hours: 1);

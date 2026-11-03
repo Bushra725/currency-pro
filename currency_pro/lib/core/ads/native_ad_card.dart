@@ -7,8 +7,9 @@ import '../app_config.dart';
 import '../theme/app_palette.dart';
 import 'ads_service.dart';
 
-/// In-feed native ad. iOS uses a custom factory so MediaView is at least
-/// 120x120 pt (AdMob's minimum for video). Android uses the medium template.
+/// In-feed native ad. iOS uses a custom factory whose MediaView is framed
+/// at 200×336 pt before AdMob validates video size. If that factory is
+/// missing, the Google medium template (also ≥120 pt) is the fallback.
 class NativeAdCard extends StatefulWidget {
   const NativeAdCard({
     super.key,
@@ -26,6 +27,7 @@ class _NativeAdCardState extends State<NativeAdCard> {
   bool _loaded = false;
   bool _failed = false;
   bool _retriedSample = false;
+  bool _retriedMedium = false;
 
   static bool get _ios =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
@@ -36,7 +38,34 @@ class _NativeAdCardState extends State<NativeAdCard> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
-  void _load() {
+  NativeTemplateStyle _mediumStyle(AppPalette p) {
+    return NativeTemplateStyle(
+      templateType: TemplateType.medium,
+      mainBackgroundColor: p.surface,
+      cornerRadius: 14,
+      callToActionTextStyle: NativeTemplateTextStyle(
+        textColor: p.onPrimary,
+        backgroundColor: p.primary,
+        style: NativeTemplateFontStyle.bold,
+        size: 13,
+      ),
+      primaryTextStyle: NativeTemplateTextStyle(
+        textColor: p.textPrimary,
+        style: NativeTemplateFontStyle.bold,
+        size: 14,
+      ),
+      secondaryTextStyle: NativeTemplateTextStyle(
+        textColor: p.textSecondary,
+        size: 12,
+      ),
+      tertiaryTextStyle: NativeTemplateTextStyle(
+        textColor: p.textSecondary,
+        size: 11,
+      ),
+    );
+  }
+
+  void _load({bool useIosFactory = true}) {
     if (!mounted || !AdsService.isSupported) return;
     final AdsService ads = context.read<AdsService>();
     if (ads.adsMuted) return;
@@ -46,6 +75,7 @@ class _NativeAdCardState extends State<NativeAdCard> {
     _loaded = false;
 
     final AppPalette p = context.palette;
+    final bool factory = _ios && useIosFactory;
     final NativeAdListener listener = NativeAdListener(
       onAdLoaded: (Ad ad) {
         if (!mounted) {
@@ -60,49 +90,26 @@ class _NativeAdCardState extends State<NativeAdCard> {
       onAdFailedToLoad: (Ad ad, LoadAdError error) {
         debugPrint('Native ad failed: $error');
         ad.dispose();
+        if (identical(_ad, ad)) _ad = null;
         if (!mounted) return;
+        if (factory && !_retriedMedium) {
+          _retriedMedium = true;
+          _load(useIosFactory: false);
+          return;
+        }
         if (error.code == 3) {
           context.read<AdsService>().retryWithSampleAds();
         }
         setState(() => _failed = true);
       },
     );
-    final NativeAd ad = _ios
-        ? NativeAd(
-            adUnitId: AdsService.nativeAdUnitId,
-            factoryId: 'native_media',
-            request: const AdRequest(),
-            listener: listener,
-          )
-        : NativeAd(
-            adUnitId: AdsService.nativeAdUnitId,
-            request: const AdRequest(),
-            listener: listener,
-            nativeTemplateStyle: NativeTemplateStyle(
-              templateType: TemplateType.medium,
-              mainBackgroundColor: p.surface,
-              cornerRadius: 14,
-              callToActionTextStyle: NativeTemplateTextStyle(
-                textColor: p.onPrimary,
-                backgroundColor: p.primary,
-                style: NativeTemplateFontStyle.bold,
-                size: 13,
-              ),
-              primaryTextStyle: NativeTemplateTextStyle(
-                textColor: p.textPrimary,
-                style: NativeTemplateFontStyle.bold,
-                size: 14,
-              ),
-              secondaryTextStyle: NativeTemplateTextStyle(
-                textColor: p.textSecondary,
-                size: 12,
-              ),
-              tertiaryTextStyle: NativeTemplateTextStyle(
-                textColor: p.textSecondary,
-                size: 11,
-              ),
-            ),
-          );
+    final NativeAd ad = NativeAd(
+      adUnitId: AdsService.nativeAdUnitId,
+      factoryId: factory ? 'native_media' : null,
+      request: const AdRequest(),
+      listener: listener,
+      nativeTemplateStyle: factory ? null : _mediumStyle(p),
+    );
     _ad = ad;
     ad.load();
   }
@@ -124,7 +131,7 @@ class _NativeAdCardState extends State<NativeAdCard> {
       _retriedSample = true;
       _failed = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _load();
+        if (mounted) _load(useIosFactory: !_retriedMedium);
       });
     }
     if (_failed || _ad == null || !_loaded) {
@@ -134,13 +141,10 @@ class _NativeAdCardState extends State<NativeAdCard> {
     final double height = widget.height ?? AppConfig.nativeAdCardHeight;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          height: height,
-          width: double.infinity,
-          child: AdWidget(ad: _ad!),
-        ),
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: AdWidget(ad: _ad!),
       ),
     );
   }
