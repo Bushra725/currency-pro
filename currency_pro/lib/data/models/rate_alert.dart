@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 /// Direction a rate has to move for an alert to fire.
-enum AlertDirection { above, below }
+enum AlertDirection { above, below, either }
 
 /// "Tell me when 1 USD is worth more than 1,371 KRW".
 class RateAlert {
@@ -13,6 +13,7 @@ class RateAlert {
     required this.targetRate,
     required this.direction,
     required this.createdAt,
+    this.thresholdPercent = 0,
     this.achievedAt,
     this.note = '',
   });
@@ -25,6 +26,10 @@ class RateAlert {
   final double startRate;
   final double targetRate;
   final AlertDirection direction;
+
+  /// Percent move used when the alert was created. Used for [either]
+  /// (up or down) and shown on the card.
+  final double thresholdPercent;
   final DateTime createdAt;
   DateTime? achievedAt;
   String note;
@@ -32,8 +37,16 @@ class RateAlert {
   bool get isAchieved => achievedAt != null;
 
   /// Percentage difference between the target and the rate at creation time.
-  double get targetDeltaPercent =>
-      startRate == 0 ? 0 : (targetRate - startRate) / startRate * 100;
+  double get targetDeltaPercent => thresholdPercent > 0
+      ? (direction == AlertDirection.below
+          ? -thresholdPercent
+          : thresholdPercent)
+      : startRate == 0
+          ? 0
+          : (targetRate - startRate) / startRate * 100;
+
+  double get _movePercent =>
+      thresholdPercent > 0 ? thresholdPercent.abs() : targetDeltaPercent.abs();
 
   /// Rate after [percent] has been applied in [direction].
   ///
@@ -50,6 +63,16 @@ class RateAlert {
 
   /// 0..1 progress of [current] between [startRate] and [targetRate].
   double progress(double current) {
+    if (direction == AlertDirection.either) {
+      final double move = _movePercent;
+      final double high = startRate * (1 + move / 100);
+      final double low = startRate * (1 - move / 100);
+      if (high == startRate || low == startRate) return 0;
+      if (current >= startRate) {
+        return ((current - startRate) / (high - startRate)).clamp(0.0, 1.0);
+      }
+      return ((startRate - current) / (startRate - low)).clamp(0.0, 1.0);
+    }
     final span = targetRate - startRate;
     if (span == 0) return 1;
     final done = (current - startRate) / span;
@@ -57,9 +80,18 @@ class RateAlert {
     return done.clamp(0.0, 1.0);
   }
 
-  bool isTriggered(double current) => direction == AlertDirection.above
-      ? current >= targetRate
-      : current <= targetRate;
+  bool isTriggered(double current) {
+    switch (direction) {
+      case AlertDirection.above:
+        return current >= targetRate;
+      case AlertDirection.below:
+        return current <= targetRate;
+      case AlertDirection.either:
+        final double move = _movePercent;
+        return current >= startRate * (1 + move / 100) ||
+            current <= startRate * (1 - move / 100);
+    }
+  }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'id': id,
@@ -68,6 +100,7 @@ class RateAlert {
         'startRate': startRate,
         'targetRate': targetRate,
         'direction': direction.name,
+        'thresholdPercent': thresholdPercent,
         'createdAt': createdAt.millisecondsSinceEpoch,
         'achievedAt': achievedAt?.millisecondsSinceEpoch,
         'note': note,
@@ -83,6 +116,7 @@ class RateAlert {
           (AlertDirection d) => d.name == json['direction'],
           orElse: () => AlertDirection.above,
         ),
+        thresholdPercent: (json['thresholdPercent'] as num?)?.toDouble() ?? 0,
         createdAt: DateTime.fromMillisecondsSinceEpoch(
             (json['createdAt'] as num).toInt()),
         achievedAt: json['achievedAt'] == null

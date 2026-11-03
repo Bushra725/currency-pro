@@ -17,7 +17,7 @@ import '../../state/rates_provider.dart';
 import '../../state/settings_provider.dart';
 import 'currency_picker.dart';
 
-/// "1 USD = …" for every currency the app knows about.
+/// "1 [base] = …" for every currency the app knows about.
 class RateListPage extends StatefulWidget {
   const RateListPage({super.key});
 
@@ -92,49 +92,51 @@ class _RateListPageState extends State<RateListPage> {
             padding: const EdgeInsets.all(12),
             child: Column(
               children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    FieldLabel(l10n.baseCurrency, width: 104),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () async {
-                          final Currency? picked = await CurrencyPicker.show(
-                            context,
-                            title: L10n.read(context).baseCurrency,
-                          );
-                          if (picked != null) {
-                            await settings.setBaseCode(picked.code);
-                          }
-                        },
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: p.surfaceAlt,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            children: <Widget>[
-                              FlagAvatar(base, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${base.code} — ${base.name}',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: p.textPrimary,
-                                ),
+                Material(
+                  color: p.surfaceAlt,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    key: const Key('rate-list-base'),
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () async {
+                      final Currency? picked = await CurrencyPicker.show(
+                        context,
+                        title: L10n.read(context).baseCurrency,
+                      );
+                      if (picked != null) {
+                        await settings.setBaseCode(picked.code);
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              l10n.baseCurrency,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: p.textSecondary,
                               ),
-                              const Spacer(),
-                              Icon(Icons.expand_more,
-                                  size: 18, color: p.textSecondary),
-                            ],
+                            ),
                           ),
-                        ),
+                          FlagAvatar(base, size: 22),
+                          const SizedBox(width: 6),
+                          Text(
+                            base.code,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: p.textPrimary,
+                            ),
+                          ),
+                          Icon(Icons.expand_more,
+                              size: 18, color: p.textSecondary),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Row(

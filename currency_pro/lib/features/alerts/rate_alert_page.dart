@@ -233,7 +233,9 @@ class _RateAlertPageState extends State<RateAlertPage> {
                   p,
                   a.direction == AlertDirection.above
                       ? l10n.targetUp
-                      : l10n.targetDown,
+                      : a.direction == AlertDirection.below
+                          ? l10n.targetDown
+                          : l10n.alertEither,
                   Fmt.smart(a.targetRate, maxDecimals: 6),
                   p.primary,
                   sub: Fmt.percent(a.targetDeltaPercent, decimals: 2),
@@ -316,7 +318,10 @@ class _RateAlertPageState extends State<RateAlertPage> {
     void writeTarget() {
       final double? live = currentRate();
       if (live == null || live <= 0 || percent <= 0) return;
-      final double next = RateAlert.targetForPercent(live, percent, direction);
+      final AlertDirection bound = direction == AlertDirection.below
+          ? AlertDirection.below
+          : AlertDirection.above;
+      final double next = RateAlert.targetForPercent(live, percent, bound);
       if (next <= 0) return;
       target.text = Fmt.smart(next, maxDecimals: 6, grouping: false);
     }
@@ -406,27 +411,6 @@ class _RateAlertPageState extends State<RateAlertPage> {
                         TextStyle(fontSize: 12, color: p.textSecondary),
                   ),
                   const SizedBox(height: 12),
-                  SegmentedButton<AlertDirection>(
-                    segments: <ButtonSegment<AlertDirection>>[
-                      ButtonSegment<AlertDirection>(
-                        value: AlertDirection.above,
-                        label: Text(l10n.risesTo),
-                        icon: const Icon(Icons.trending_up, size: 16),
-                      ),
-                      ButtonSegment<AlertDirection>(
-                        value: AlertDirection.below,
-                        label: Text(l10n.fallsTo),
-                        icon: const Icon(Icons.trending_down, size: 16),
-                      ),
-                    ],
-                    selected: <AlertDirection>{direction},
-                    onSelectionChanged: (Set<AlertDirection> value) =>
-                        setSheet(() {
-                      direction = value.first;
-                      writeTarget();
-                    }),
-                  ),
-                  const SizedBox(height: 12),
                   Text(
                     l10n.alertPercent,
                     style: TextStyle(
@@ -434,6 +418,11 @@ class _RateAlertPageState extends State<RateAlertPage> {
                       fontWeight: FontWeight.w700,
                       color: p.textSecondary,
                     ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.alertPercentHint,
+                    style: TextStyle(fontSize: 11.5, color: p.textSecondary),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -470,6 +459,30 @@ class _RateAlertPageState extends State<RateAlertPage> {
                         writeTarget();
                       });
                     },
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <AlertDirection>[
+                      AlertDirection.above,
+                      AlertDirection.below,
+                      AlertDirection.either,
+                    ].map((AlertDirection value) {
+                      final String label = value == AlertDirection.above
+                          ? l10n.risesTo
+                          : value == AlertDirection.below
+                              ? l10n.fallsTo
+                              : l10n.alertEither;
+                      return ChoiceChip(
+                        label: Text(label),
+                        selected: direction == value,
+                        onSelected: (_) => setSheet(() {
+                          direction = value;
+                          writeTarget();
+                        }),
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -516,6 +529,7 @@ class _RateAlertPageState extends State<RateAlertPage> {
             startRate: rates.pairRate(from, to) ?? targetValue,
             targetRate: targetValue,
             direction: direction,
+            thresholdPercent: percent,
             createdAt: DateTime.now(),
           ),
         );

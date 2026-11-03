@@ -106,6 +106,21 @@ class Trip {
     return map;
   }
 
+  /// Expenses grouped by local calendar day, newest day first.
+  Map<DateTime, List<Expense>> get byDay {
+    final Map<DateTime, List<Expense>> map = <DateTime, List<Expense>>{};
+    for (final Expense expense in expenses) {
+      final DateTime local = expense.date.toLocal();
+      final DateTime day = DateTime(local.year, local.month, local.day);
+      map.putIfAbsent(day, () => <Expense>[]).add(expense);
+    }
+    final List<DateTime> days = map.keys.toList()
+      ..sort((DateTime a, DateTime b) => b.compareTo(a));
+    return <DateTime, List<Expense>>{
+      for (final DateTime day in days) day: map[day]!,
+    };
+  }
+
   int get days => endDate.difference(startDate).inDays + 1;
 
   Map<String, dynamic> toJson() => <String, dynamic>{

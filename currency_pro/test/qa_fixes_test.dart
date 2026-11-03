@@ -14,6 +14,7 @@ import 'package:currency_pro/data/models/rate_snapshot.dart';
 import 'package:currency_pro/data/repositories/rates_repository.dart';
 import 'package:currency_pro/data/services/prefs_service.dart';
 import 'package:currency_pro/features/alerts/rate_alert_page.dart';
+import 'package:currency_pro/data/models/trip.dart';
 import 'package:currency_pro/features/travel/travel_budget_page.dart';
 import 'package:currency_pro/state/trips_provider.dart';
 import 'package:currency_pro/features/currency/metals_page.dart';
@@ -694,6 +695,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Percentage change'), findsWidgets);
+    expect(find.text('Rise or fall'), findsOneWidget);
     expect(find.text('5%'), findsOneWidget);
 
     String targetText() {
@@ -738,14 +740,24 @@ void main() {
     await tester.tap(find.text('ADD NEW TRIP'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Base Country Currency'), findsWidgets);
+    expect(find.text('Destination Country Currency'), findsWidgets);
+
     final TextField budget =
         tester.widget<TextField>(find.byKey(const Key('trip-budget')));
     expect(budget.decoration!.suffixText, 'EUR');
-    expect(find.text('About 1,111.11 USD at home'), findsOneWidget);
+    expect(budget.decoration!.labelText, contains('Destination Country Currency'));
+    expect(
+      find.text('Equals 1,111.11 USD in Base Country Currency'),
+      findsOneWidget,
+    );
 
     await tester.enterText(find.byKey(const Key('trip-budget')), '100');
     await tester.pumpAndSettle();
-    expect(find.text('About 111.11 USD at home'), findsOneWidget);
+    expect(
+      find.text('Equals 111.11 USD in Base Country Currency'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('CREATE TRIP'));
     await tester.pumpAndSettle();
@@ -753,9 +765,28 @@ void main() {
     expect(find.text('100.00 EUR'), findsWidgets);
     expect(find.text('0.00 EUR'), findsOneWidget);
     expect(find.text('≈ 0.00 USD'), findsOneWidget);
-    expect(find.text('≈ 111.11 USD'), findsOneWidget);
+    expect(find.text('≈ 111.11 USD'), findsWidgets);
 
-    await tester.tap(find.text('EXPENSE'));
+    await tester.tap(find.text('Trip to EUR'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('trip-detail')), findsOneWidget);
+    expect(find.text('Total Budget'), findsWidgets);
+    expect(find.text('Remaining'), findsWidgets);
+    expect(find.text('Expenses'), findsOneWidget);
+    expect(find.text('Expense categories'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Daily spending'),
+      400,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('trip-detail')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.text('Daily spending'), findsOneWidget);
+    expect(find.byKey(const Key('category-pie')), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('add-expense')));
+    await tester.tap(find.byKey(const Key('add-expense')));
     await tester.pumpAndSettle();
     final Finder expenseAmount = find.byWidgetPredicate(
       (Widget widget) =>
@@ -772,17 +803,14 @@ void main() {
     await tester.tap(find.text('SAVE EXPENSE'));
     await tester.pumpAndSettle();
 
-    expect(find.text('40.00 EUR'), findsOneWidget);
-    expect(find.text('≈ 44.44 USD'), findsOneWidget);
-    expect(find.text('60.00 EUR'), findsOneWidget);
-    expect(find.text('≈ 66.67 USD'), findsOneWidget);
-
-    await tester.tap(find.text('Spending overview'));
-    await tester.pumpAndSettle();
-    expect(find.text('Daily spending'), findsOneWidget);
-    expect(find.text('Per day'), findsOneWidget);
+    expect(find.text('40.00 EUR'), findsWidgets);
+    expect(find.text('≈ 44.44 USD'), findsWidgets);
+    expect(find.text('60.00 EUR', skipOffstage: false), findsWidgets);
+    expect(find.text('≈ 66.67 USD', skipOffstage: false), findsWidgets);
     expect(find.textContaining('Airport taxi'), findsOneWidget);
+    expect(find.textContaining('Food'), findsWidgets);
 
+    await tester.ensureVisible(find.byIcon(Icons.edit_outlined));
     await tester.tap(find.byIcon(Icons.edit_outlined));
     await tester.pumpAndSettle();
     expect(find.text('Edit expense'), findsOneWidget);
@@ -797,13 +825,96 @@ void main() {
 
     expect(find.textContaining('Airport taxi, tip'), findsOneWidget);
     expect(find.text('25.00 EUR'), findsWidgets);
-    expect(find.text('75.00 EUR'), findsOneWidget);
+    expect(find.text('75.00 EUR', skipOffstage: false), findsWidgets);
 
-    tester.state<NavigatorState>(find.byType(Navigator)).pop();
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('trip-detail')),
+        matching: find.byIcon(Icons.more_vert),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Export CSV'), findsOneWidget);
+  });
+
+  testWidgets('a trip detail shows expenses, category pie and daily totals',
+      (WidgetTester tester) async {
+    final _Boot boot = await _boot();
+    final RateSnapshot snapshot = RateSnapshot(
+      base: 'USD',
+      rates: const <String, double>{'USD': 1, 'EUR': 0.9},
+      fetchedAt: DateTime(2026, 10, 8),
+      providerUpdatedAt: DateTime(2026, 10, 8),
+    );
+    await boot.prefs.setString(PrefsService.kRateSnapshot, snapshot.encode());
+    final RatesProvider rates = _rates(boot.prefs);
+    final TripsProvider trips = TripsProvider(boot.prefs);
+    await trips.add(
+      Trip(
+        id: 'paris',
+        name: 'Paris',
+        homeCurrency: 'USD',
+        localCurrency: 'EUR',
+        budget: 200,
+        budgetInLocal: true,
+        startDate: DateTime(2026, 10, 8),
+        endDate: DateTime(2026, 10, 14),
+        expenses: <Expense>[
+          Expense(
+            id: 'e1',
+            title: 'Lunch',
+            note: 'Cafe',
+            amount: 40,
+            category: ExpenseCategory.food,
+            date: DateTime(2026, 10, 8, 12),
+          ),
+          Expense(
+            id: 'e2',
+            title: 'Museum',
+            amount: 20,
+            category: ExpenseCategory.sightseeing,
+            date: DateTime(2026, 10, 9, 15),
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(_app(
+      boot.settings,
+      prefs: boot.prefs,
+      rates: rates,
+      trips: trips,
+      home: const TravelBudgetPage(),
+    ));
+    await tester.pump();
+
+    await tester.tap(find.text('Paris'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('trip-detail')), findsOneWidget);
+    expect(find.text('Total Budget'), findsWidgets);
+    expect(find.text('200.00 EUR'), findsWidgets);
+    expect(find.text('60.00 EUR'), findsWidgets);
+    expect(find.text('140.00 EUR'), findsWidgets);
+    expect(find.text('Lunch'), findsWidgets);
+    expect(find.text('Museum'), findsWidgets);
+    expect(find.textContaining('Cafe'), findsOneWidget);
+    expect(find.byKey(const Key('category-pie')), findsOneWidget);
+    expect(find.textContaining('Food'), findsWidgets);
+    expect(find.textContaining('Sightseeing'), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('Daily spending'),
+      400,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('trip-detail')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.text('8 Oct 2026'), findsWidgets);
+    expect(find.text('9 Oct 2026'), findsWidgets);
+    expect(find.text('40.00 EUR'), findsWidgets);
+    expect(find.text('20.00 EUR'), findsWidgets);
+    expect(find.byKey(const Key('add-expense')), findsOneWidget);
   });
 
   testWidgets('a failed chart shows the friendly message and nothing technical',

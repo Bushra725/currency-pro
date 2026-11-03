@@ -265,42 +265,65 @@ class _MetalsPageState extends State<MetalsPage>
     AppPalette p,
     SettingsProvider settings,
     Currency base,
-    Key key,
-  ) {
+    Key key, {
+    String? label,
+  }) {
     final L10n l10n = L10n.of(context);
-    return Row(
-      children: <Widget>[
-        FieldLabel(l10n.baseCurrency, width: 104),
-        Expanded(
-          child: InkWell(
-            key: key,
-            onTap: () async {
-              final Currency? picked = await CurrencyPicker.show(
-                context,
-                title: L10n.read(context).baseCurrency,
-              );
-              if (picked != null) {
-                await settings.setBaseCode(picked.code);
-              }
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: <Widget>[
-                FlagAvatar(base, size: 20),
-                const SizedBox(width: 6),
-                Text(
-                  base.code,
+    return Material(
+      color: p.surfaceAlt,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        key: key,
+        borderRadius: BorderRadius.circular(12),
+        onTap: () async {
+          final Currency? picked = await CurrencyPicker.show(
+            context,
+            title: label ?? L10n.read(context).baseCurrency,
+          );
+          if (picked != null) {
+            await settings.setBaseCode(picked.code);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  label ?? l10n.baseCurrency,
                   style: TextStyle(
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: p.textPrimary,
+                    color: p.textSecondary,
                   ),
                 ),
-                Icon(Icons.expand_more, size: 18, color: p.textSecondary),
-              ],
-            ),
+              ),
+              FlagAvatar(base, size: 22),
+              const SizedBox(width: 6),
+              Text(
+                base.code,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: p.textPrimary,
+                ),
+              ),
+              Icon(Icons.expand_more, size: 18, color: p.textSecondary),
+            ],
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _addCurrencyButton(Key key, VoidCallback onPressed) {
+    return FilledButton.tonalIcon(
+      key: key,
+      onPressed: onPressed,
+      icon: const Icon(Icons.add, size: 18),
+      label: Text(L10n.of(context).addCurrency),
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(double.infinity, 48),
+      ),
     );
   }
 
@@ -340,6 +363,11 @@ class _MetalsPageState extends State<MetalsPage>
             ],
           ),
         ),
+        const SizedBox(height: 10),
+        _addCurrencyButton(
+          const Key('price-add-currency'),
+          _addPriceCurrency,
+        ),
         const SizedBox(height: 12),
         ..._priceCodes.map(
           (String code) => _assetCard(
@@ -352,12 +380,6 @@ class _MetalsPageState extends State<MetalsPage>
                 ? null
                 : () => _removePriceCurrency(code),
           ),
-        ),
-        OutlinedButton.icon(
-          key: const Key('price-add-currency'),
-          onPressed: _addPriceCurrency,
-          icon: const Icon(Icons.add, size: 18),
-          label: Text(l10n.addCurrency),
         ),
       ],
     );
@@ -555,50 +577,52 @@ class _MetalsPageState extends State<MetalsPage>
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
       children: <Widget>[
-        SectionCard(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: <Widget>[
-              FieldLabel(l10n.baseCurrency, width: 104),
-              Expanded(
-                child: InkWell(
-                  key: const Key('cross-base'),
-                  onTap: _pickCrossBase,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: <Widget>[
-                      FlagAvatar(base, size: 20),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          base.code,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: p.textPrimary,
-                          ),
-                        ),
+        Material(
+          color: p.surfaceAlt,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            key: const Key('cross-base'),
+            borderRadius: BorderRadius.circular(12),
+            onTap: _pickCrossBase,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      l10n.baseCurrency,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: p.textSecondary,
                       ),
-                      Icon(Icons.expand_more, size: 18, color: p.textSecondary),
-                    ],
+                    ),
                   ),
-                ),
+                  FlagAvatar(base, size: 22),
+                  const SizedBox(width: 6),
+                  Text(
+                    base.code,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: p.textPrimary,
+                    ),
+                  ),
+                  Icon(Icons.expand_more, size: 18, color: p.textSecondary),
+                ],
               ),
-            ],
+            ),
           ),
+        ),
+        const SizedBox(height: 10),
+        _addCurrencyButton(
+          const Key('cross-add-currency'),
+          _addCrossCurrency,
         ),
         const SizedBox(height: 12),
         _tableHeading(p, l10n.tabCross),
         SectionCard(
           padding: const EdgeInsets.all(10),
           child: _crossMatrix(p, rates, codes),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          key: const Key('cross-add-currency'),
-          onPressed: _addCrossCurrency,
-          icon: const Icon(Icons.add, size: 18),
-          label: Text(l10n.addCurrency),
         ),
         const SizedBox(height: 16),
         _tableHeading(p, l10n.keyPoints),
@@ -827,16 +851,53 @@ class _MetalsPageState extends State<MetalsPage>
       if (value != null) total += value;
     });
 
+    final List<String> metalCodes = <String>['XAU', 'XAG'];
+    for (final String code in _holdings.keys) {
+      if (CurrencyLookup.of(code).isMetal && !metalCodes.contains(code)) {
+        metalCodes.add(code);
+      }
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
       children: <Widget>[
         SectionCard(
           padding: const EdgeInsets.all(12),
-          child: _baseCurrencyRow(
-            p,
-            settings,
-            base,
-            const Key('assets-base'),
+          child: Column(
+            children: <Widget>[
+              _baseCurrencyRow(
+                p,
+                settings,
+                base,
+                const Key('assets-base'),
+                label: l10n.resultCurrency,
+              ),
+              const SizedBox(height: 4),
+              for (final String code in metalCodes)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: <Widget>[
+                      FieldLabel(
+                        '${CurrencyLookup.of(code).code} · ${l10n.metalUnit}',
+                        width: 140,
+                      ),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: AppDropdown<String>(
+                            key: ValueKey<String>('asset-unit-$code'),
+                            value: _unitFor(code),
+                            entries: _unitEntries,
+                            onChanged: (String next) =>
+                                _setMetalUnit(code, next),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
@@ -903,16 +964,6 @@ class _MetalsPageState extends State<MetalsPage>
                             style: TextStyle(
                                 fontSize: 10.5, color: p.textSecondary),
                           ),
-                          if (c.isMetal) ...<Widget>[
-                            const SizedBox(height: 6),
-                            AppDropdown<String>(
-                              key: ValueKey<String>('asset-unit-${c.code}'),
-                              value: unit,
-                              entries: _unitEntries,
-                              onChanged: (String next) =>
-                                  _setMetalUnit(c.code, next),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -940,10 +991,13 @@ class _MetalsPageState extends State<MetalsPage>
             );
           }),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
+        FilledButton.tonalIcon(
           onPressed: _addHolding,
           icon: const Icon(Icons.add, size: 18),
           label: Text(l10n.addHolding),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48),
+          ),
         ),
       ],
     );

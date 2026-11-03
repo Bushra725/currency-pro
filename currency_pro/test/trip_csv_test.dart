@@ -64,4 +64,47 @@ void main() {
     expect(tripCsvFileName('a/b:c'), 'a b c.csv');
     expect(tripCsvFileName('   '), 'trip.csv');
   });
+
+  test('a trip groups expenses by local calendar day', () {
+    final Trip trip = Trip(
+      id: '1',
+      name: 'Paris',
+      homeCurrency: 'USD',
+      localCurrency: 'EUR',
+      budget: 100,
+      budgetInLocal: true,
+      startDate: DateTime(2026, 10, 8),
+      endDate: DateTime(2026, 10, 14),
+      expenses: <Expense>[
+        Expense(
+          id: 'e2',
+          title: 'Museum',
+          amount: 20,
+          category: ExpenseCategory.sightseeing,
+          date: DateTime(2026, 10, 9, 15, 30),
+        ),
+        Expense(
+          id: 'e1',
+          title: 'Lunch',
+          amount: 40,
+          category: ExpenseCategory.food,
+          date: DateTime(2026, 10, 8, 12),
+        ),
+        Expense(
+          id: 'e3',
+          title: 'Dinner',
+          amount: 30,
+          category: ExpenseCategory.food,
+          date: DateTime(2026, 10, 8, 20),
+        ),
+      ],
+    );
+
+    final List<DateTime> days = trip.byDay.keys.toList();
+    expect(days, hasLength(2));
+    expect(days.first, DateTime(2026, 10, 9));
+    expect(days.last, DateTime(2026, 10, 8));
+    expect(trip.byDay[DateTime(2026, 10, 8)], hasLength(2));
+    expect(trip.byCategory[ExpenseCategory.food], 70);
+  });
 }

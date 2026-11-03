@@ -170,4 +170,11 @@ class ChartRange {
     ChartRange('1Y', 365),
     ChartRange('2Y', 730),
   ];
+
+  /// Short windows used by Currency Simulation.
+  static const List<ChartRange> short = <ChartRange>[
+    ChartRange('10D', 10),
+    ChartRange('1M', 30),
+    ChartRange('3M', 90),
+  ];
 }
