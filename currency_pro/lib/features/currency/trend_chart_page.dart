@@ -35,6 +35,7 @@ class _TrendChartPageState extends State<TrendChartPage> {
   _ChartError? _error;
   String _from = 'USD';
   String _to = 'GBP';
+  int _loadId = 0;
 
   @override
   void initState() {
@@ -52,16 +53,20 @@ class _TrendChartPageState extends State<TrendChartPage> {
   }
 
   Future<void> _load() async {
+    final int id = ++_loadId;
+    final String from = _from;
+    final String to = _to;
+    final int days = _range.days;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      HistorySeries result = await _api.series(_from, _to, _range.days);
-      if (result.failed || result.points.length < 2) {
-        result = await _api.series(_from, _to, _range.days);
+      HistorySeries result = await _api.series(from, to, days);
+      if ((result.failed || result.points.length < 2) && id == _loadId) {
+        result = await _api.series(from, to, days);
       }
-      if (!mounted) return;
+      if (!mounted || id != _loadId) return;
       final RatesProvider rates = context.read<RatesProvider>();
       final bool online = rates.hasData && !rates.isOffline;
       setState(() {
@@ -74,14 +79,12 @@ class _TrendChartPageState extends State<TrendChartPage> {
           _error = _ChartError.network;
         } else {
           _points = <RatePoint>[];
-          // Hosts answered, or live rates already prove the phone is
-          // online. Missing history is not a dropped connection.
           _error = _ChartError.unsupportedPair;
         }
       });
     } catch (_) {
-      debugPrint('Trend chart load failed for $_from/$_to');
-      if (!mounted) return;
+      debugPrint('Trend chart load failed for $from/$to');
+      if (!mounted || id != _loadId) return;
       final RatesProvider rates = context.read<RatesProvider>();
       setState(() {
         _points = <RatePoint>[];

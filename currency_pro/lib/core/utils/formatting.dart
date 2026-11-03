@@ -56,6 +56,38 @@ class Fmt {
     return NumberFormat(pattern, 'en_US').format(v);
   }
 
+  /// Converted FX amounts. Always keeps at least four fraction digits so a
+  /// rate like 0.09737 is not shown as a whole number, and bumps the scale
+  /// for tinier values so 0.00487 is never rounded to 0.
+  static String conversion(
+    double value, {
+    RoundingMode mode = RoundingMode.halfUp,
+    bool grouping = true,
+    int minDecimals = 4,
+    int maxDecimals = 8,
+  }) {
+    if (value.isNaN) return 'NaN';
+    if (value.isInfinite) return value.isNegative ? '-∞' : '∞';
+
+    int decimals = minDecimals.clamp(4, maxDecimals);
+    final double abs = value.abs();
+    if (abs > 0 && abs < 0.01) decimals = math.max(decimals, 5);
+    if (abs > 0 && abs < 0.001) decimals = math.max(decimals, 6);
+    if (abs > 0 && abs < 0.0001) decimals = math.max(decimals, 8);
+    decimals = decimals.clamp(4, maxDecimals);
+    while (decimals < maxDecimals &&
+        value != 0 &&
+        round(value, decimals, mode) == 0) {
+      decimals++;
+    }
+    return amount(
+      value,
+      decimals: decimals,
+      mode: mode,
+      grouping: grouping,
+    );
+  }
+
   /// Like [amount] but drops trailing zeros — used by unit converters where
   /// "12.5" reads better than "12.500000".
   static String smart(double value, {int maxDecimals = 8, bool grouping = true}) {

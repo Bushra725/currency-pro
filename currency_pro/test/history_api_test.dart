@@ -60,6 +60,16 @@ void main() {
     expect(result.points.last.value, closeTo(0.79, 0.001));
     api.dispose();
   });
+
+  test('a non-ECB pair loads from the USD archive table', () async {
+    final HistoryApi api = HistoryApi(client: _UsdTableClient());
+    final HistorySeries result = await api.series('PKR', 'INR', 10);
+
+    expect(result.failed, isFalse);
+    expect(result.points.length, greaterThanOrEqualTo(2));
+    expect(result.points.last.value, closeTo(88 / 277, 0.001));
+    api.dispose();
+  });
 }
 
 class _ArchiveClient extends http.BaseClient {
@@ -129,6 +139,28 @@ class _ChartClient extends http.BaseClient {
             },
           ],
         },
+      });
+    }
+    return _json(<String, dynamic>{'message': 'not found'}, status: 404);
+  }
+
+  http.StreamedResponse _json(Map<String, dynamic> body, {int status = 200}) {
+    final List<int> bytes = utf8.encode(jsonEncode(body));
+    return http.StreamedResponse(
+      Stream<List<int>>.value(bytes),
+      status,
+      headers: <String, String>{'content-type': 'application/json'},
+    );
+  }
+}
+
+class _UsdTableClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final String url = request.url.toString();
+    if (url.contains('/currencies/usd.min.json')) {
+      return _json(<String, dynamic>{
+        'usd': <String, double>{'pkr': 277, 'inr': 88, 'aed': 3.67},
       });
     }
     return _json(<String, dynamic>{'message': 'not found'}, status: 404);

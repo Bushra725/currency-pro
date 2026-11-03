@@ -67,8 +67,8 @@ class AppConfig {
         '${day.day.toString().padLeft(2, '0')}';
     final String file = '/v1/currencies/${code.toLowerCase()}.min.json';
     return <String>[
-      'https://$date.currency-api.pages.dev$file',
       'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@$date$file',
+      'https://$date.currency-api.pages.dev$file',
     ];
   }
 

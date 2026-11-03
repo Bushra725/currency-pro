@@ -198,5 +198,19 @@ void main() {
       expect(Fmt.smart(12.500000), '12.5');
       expect(Fmt.smart(0), '0');
     });
+
+    test('conversion keeps at least four fraction digits', () {
+      expect(Fmt.conversion(0.09737), '0.0974');
+      expect(Fmt.conversion(0.09737), isNot('10'));
+      expect(Fmt.conversion(0.09737), isNot('0'));
+      expect(Fmt.conversion(1.5), '1.5000');
+    });
+
+    test('conversion does not round tiny FX amounts to zero', () {
+      expect(Fmt.conversion(0.00487), '0.00487');
+      expect(Fmt.conversion(0.00487), isNot('0'));
+      expect(Fmt.conversion(0.00487), isNot('0.00'));
+      expect(Fmt.conversion(0.00012), contains('0.00012'));
+    });
   });
 }

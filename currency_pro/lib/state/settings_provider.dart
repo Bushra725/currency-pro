@@ -257,6 +257,15 @@ class SettingsProvider extends ChangeNotifier {
         grouping: _grouping,
       );
 
+  /// Converter / multi-currency result. Ignores ISO cash decimals (JPY = 0,
+  /// USD = 2) so a fractional FX amount is not rounded to 0 or a whole number.
+  String formatConversion(double value) => Fmt.conversion(
+        value,
+        minDecimals: _decimals < 4 ? 4 : _decimals,
+        mode: _rounding,
+        grouping: _grouping,
+      );
+
   Future<void> resetAll() async {
     final bool keepOnboarding = _onboardingDone;
     final bool keepNotifications = _notificationsEnabled;

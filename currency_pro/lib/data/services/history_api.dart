@@ -10,12 +10,10 @@ import 'metals_api.dart';
 
 /// Historical exchange-rate series used by the Trend Charts screen.
 ///
-/// * Fiat pairs come from the European Central Bank feed (frankfurter.dev),
-///   which offers daily reference rates going back to 1999.
-/// * Crypto and metals come from CoinGecko's market chart endpoint.
-/// * If a pair is not covered by either source (many exotic currencies are
-///   not in the ECB basket) the caller receives an empty list and the UI
-///   explains that history is unavailable for that pair.
+/// * ECB pairs come from frankfurter.app (daily reference rates).
+/// * Every other fiat pair uses the same USD daily archive as live rates.
+/// * Crypto and metals come from CoinGecko.
+/// * Yahoo Finance is a fallback when a dated archive file is missing.
 class HistoryApi {
   HistoryApi({http.Client? client, MetalsApi? metals})
       : _client = client ?? http.Client(),
@@ -73,7 +71,7 @@ class HistoryApi {
     ) async {
       try {
         final List<RatePoint> points = await load();
-        reachedHost = true;
+        if (points.isNotEmpty) reachedHost = true;
         return points;
       } catch (e) {
         lastError = e;
@@ -94,6 +92,13 @@ class HistoryApi {
       if (ecb.length >= 2) return ecb;
     }
 
+    // Same USD daily table the live rate feed uses, so any pair that
+    // converts on the home screen can also draw a chart.
+    final List<RatePoint> archived = await attempt(
+      () => _archiveSeries(from, to, days),
+    );
+    if (archived.length >= 2) return _tail(archived, days);
+
     final List<RatePoint> direct = await attempt(
       () => _yahooSymbol(
         _fxSymbol(from, to),
@@ -102,6 +107,19 @@ class HistoryApi {
       ),
     );
     if (direct.length >= 2) return _tail(direct, days);
+
+    final List<RatePoint> inverted = await attempt(
+      () => _yahooSymbol(_fxSymbol(to, from), days),
+    );
+    if (inverted.length >= 2) {
+      return _tail(
+        inverted
+            .where((RatePoint point) => point.value != 0)
+            .map((RatePoint point) => RatePoint(point.date, 1 / point.value))
+            .toList(),
+        days,
+      );
+    }
 
     if (from != 'USD' && to != 'USD') {
       final List<RatePoint> fromUsd = await attempt(
@@ -117,11 +135,6 @@ class HistoryApi {
       final List<RatePoint> crossed = _cross(fromUsd, usdTo);
       if (crossed.length >= 2) return _tail(crossed, days);
     }
-
-    final List<RatePoint> archived = await attempt(
-      () => _archiveSeries(from, to, days),
-    );
-    if (archived.length >= 2) return _tail(archived, days);
 
     if (!reachedHost && lastError != null) {
       throw lastError!;
@@ -145,8 +158,10 @@ class HistoryApi {
                 : 28;
     final DateTime end = DateTime.now().toUtc();
     final List<DateTime> dates = <DateTime>[];
+    final Set<String> seen = <String>{};
     for (int ago = days; ago >= 1; ago -= step) {
-      dates.add(end.subtract(Duration(days: ago)));
+      final DateTime day = _weekday(end.subtract(Duration(days: ago)));
+      if (seen.add(_dayKey(day))) dates.add(day);
     }
 
     Object? failure;
@@ -181,12 +196,16 @@ class HistoryApi {
   Future<RatePoint?> _archiveDay(String from, String to, DateTime day) async {
     final DateTime utc = day.toUtc();
     Object? failure;
-    for (final String url in AppConfig.fawazOn(utc, from)) {
+    final List<String> urls = <String>[
+      ...AppConfig.fawazOn(utc, 'USD'),
+      if (from.toUpperCase() != 'USD') ...AppConfig.fawazOn(utc, from),
+    ];
+    for (final String url in urls) {
       try {
         final http.Response res = await AppHttp.get(
           _client,
           Uri.parse(url),
-          timeout: const Duration(seconds: 6),
+          timeout: const Duration(seconds: 8),
         );
         if (res.statusCode == 404) continue;
         if (res.statusCode != 200) {
@@ -211,14 +230,38 @@ class HistoryApi {
   ) {
     final dynamic decoded = jsonDecode(body);
     if (decoded is! Map) return null;
-    final dynamic table = decoded[from.toLowerCase()];
-    if (table is! Map) return null;
-    final dynamic value = table[to.toLowerCase()];
-    if (value is! num || value <= 0) return null;
-    return RatePoint(
-      DateTime.utc(utc.year, utc.month, utc.day, 12),
-      value.toDouble(),
-    );
+    final String fromCode = from.toLowerCase();
+    final String toCode = to.toLowerCase();
+    final DateTime date = DateTime.utc(utc.year, utc.month, utc.day, 12);
+
+    final dynamic direct = decoded[fromCode];
+    if (direct is Map) {
+      final dynamic value = direct[toCode];
+      if (value is num && value > 0) {
+        return RatePoint(date, value.toDouble());
+      }
+    }
+
+    final dynamic usd = decoded['usd'];
+    if (usd is Map) {
+      final dynamic fromPerUsd = fromCode == 'usd' ? 1.0 : usd[fromCode];
+      final dynamic toPerUsd = toCode == 'usd' ? 1.0 : usd[toCode];
+      if (fromPerUsd is num &&
+          toPerUsd is num &&
+          fromPerUsd > 0 &&
+          toPerUsd > 0) {
+        return RatePoint(date, toPerUsd / fromPerUsd);
+      }
+    }
+    return null;
+  }
+
+  static DateTime _weekday(DateTime day) {
+    DateTime d = DateTime.utc(day.year, day.month, day.day);
+    while (d.weekday > DateTime.friday) {
+      d = d.subtract(const Duration(days: 1));
+    }
+    return d;
   }
 
   /// `BTC-USD` is one bitcoin in dollars. `USDGBP=X` is one dollar in pounds.
