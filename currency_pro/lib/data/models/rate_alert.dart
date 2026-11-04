@@ -14,6 +14,8 @@ class RateAlert {
     required this.direction,
     required this.createdAt,
     this.thresholdPercent = 0,
+    this.upPercent = 0,
+    this.downPercent = 0,
     this.achievedAt,
     this.note = '',
   });
@@ -28,8 +30,17 @@ class RateAlert {
   final AlertDirection direction;
 
   /// Percent move used when the alert was created. Used for [either]
-  /// (up or down) and shown on the card.
+  /// (up or down) and shown on the card when [upPercent] and [downPercent]
+  /// were not set separately.
   final double thresholdPercent;
+
+  /// Rise that fires an [AlertDirection.either] alert. Zero means "use
+  /// [thresholdPercent]".
+  final double upPercent;
+
+  /// Fall that fires an [AlertDirection.either] alert. Zero means "use
+  /// [thresholdPercent]".
+  final double downPercent;
   final DateTime createdAt;
   DateTime? achievedAt;
   String note;
@@ -48,6 +59,10 @@ class RateAlert {
   double get _movePercent =>
       thresholdPercent > 0 ? thresholdPercent.abs() : targetDeltaPercent.abs();
 
+  double get _upMove => upPercent > 0 ? upPercent.abs() : _movePercent;
+
+  double get _downMove => downPercent > 0 ? downPercent.abs() : _movePercent;
+
   /// Rate after [percent] has been applied in [direction].
   ///
   /// Five percent above 1.00 is 1.05. Five percent below 1.00 is 0.95.
@@ -64,9 +79,8 @@ class RateAlert {
   /// 0..1 progress of [current] between [startRate] and [targetRate].
   double progress(double current) {
     if (direction == AlertDirection.either) {
-      final double move = _movePercent;
-      final double high = startRate * (1 + move / 100);
-      final double low = startRate * (1 - move / 100);
+      final double high = startRate * (1 + _upMove / 100);
+      final double low = startRate * (1 - _downMove / 100);
       if (high == startRate || low == startRate) return 0;
       if (current >= startRate) {
         return ((current - startRate) / (high - startRate)).clamp(0.0, 1.0);
@@ -87,9 +101,8 @@ class RateAlert {
       case AlertDirection.below:
         return current <= targetRate;
       case AlertDirection.either:
-        final double move = _movePercent;
-        return current >= startRate * (1 + move / 100) ||
-            current <= startRate * (1 - move / 100);
+        return current >= startRate * (1 + _upMove / 100) ||
+            current <= startRate * (1 - _downMove / 100);
     }
   }
 
@@ -101,6 +114,8 @@ class RateAlert {
         'targetRate': targetRate,
         'direction': direction.name,
         'thresholdPercent': thresholdPercent,
+        'upPercent': upPercent,
+        'downPercent': downPercent,
         'createdAt': createdAt.millisecondsSinceEpoch,
         'achievedAt': achievedAt?.millisecondsSinceEpoch,
         'note': note,
@@ -117,6 +132,8 @@ class RateAlert {
           orElse: () => AlertDirection.above,
         ),
         thresholdPercent: (json['thresholdPercent'] as num?)?.toDouble() ?? 0,
+        upPercent: (json['upPercent'] as num?)?.toDouble() ?? 0,
+        downPercent: (json['downPercent'] as num?)?.toDouble() ?? 0,
         createdAt: DateTime.fromMillisecondsSinceEpoch(
             (json['createdAt'] as num).toInt()),
         achievedAt: json['achievedAt'] == null

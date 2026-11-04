@@ -67,14 +67,12 @@ class _TrendChartPageState extends State<TrendChartPage> {
         result = await _api.series(from, to, days);
       }
       if (!mounted || id != _loadId) return;
-      final RatesProvider rates = context.read<RatesProvider>();
-      final bool online = rates.hasData && !rates.isOffline;
       setState(() {
         _loading = false;
         if (result.points.length >= 2) {
           _points = result.points;
           _error = null;
-        } else if (result.failed && !online) {
+        } else if (result.failed) {
           _points = <RatePoint>[];
           _error = _ChartError.network;
         } else {
@@ -85,13 +83,10 @@ class _TrendChartPageState extends State<TrendChartPage> {
     } catch (_) {
       debugPrint('Trend chart load failed for $from/$to');
       if (!mounted || id != _loadId) return;
-      final RatesProvider rates = context.read<RatesProvider>();
       setState(() {
         _points = <RatePoint>[];
         _loading = false;
-        _error = rates.hasData && !rates.isOffline
-            ? _ChartError.unsupportedPair
-            : _ChartError.network;
+        _error = _ChartError.network;
       });
     }
   }

@@ -310,8 +310,12 @@ class _RateAlertPageState extends State<RateAlertPage> {
     String to = settings.toCode;
     AlertDirection direction = AlertDirection.above;
     double percent = 5;
+    double upPercent = 5;
+    double downPercent = 5;
     final TextEditingController target = TextEditingController();
     final TextEditingController percentField = TextEditingController(text: '5');
+    final TextEditingController upField = TextEditingController(text: '5');
+    final TextEditingController downField = TextEditingController(text: '5');
 
     double? currentRate() => rates.pairRate(from, to);
 
@@ -435,8 +439,13 @@ class _RateAlertPageState extends State<RateAlertPage> {
                         selected: selected,
                         onSelected: (_) => setSheet(() {
                           percent = value;
-                          percentField.text =
+                          upPercent = value;
+                          downPercent = value;
+                          final String text =
                               Fmt.smart(value, grouping: false);
+                          percentField.text = text;
+                          upField.text = text;
+                          downField.text = text;
                           writeTarget();
                         }),
                       );
@@ -456,6 +465,12 @@ class _RateAlertPageState extends State<RateAlertPage> {
                       if (value == null || value <= 0) return;
                       setSheet(() {
                         percent = value;
+                        upPercent = value;
+                        downPercent = value;
+                        final String shown =
+                            Fmt.smart(value, grouping: false);
+                        upField.text = shown;
+                        downField.text = shown;
                         writeTarget();
                       });
                     },
@@ -484,6 +499,40 @@ class _RateAlertPageState extends State<RateAlertPage> {
                       );
                     }).toList(),
                   ),
+                  if (direction == AlertDirection.either) ...<Widget>[
+                    const SizedBox(height: 12),
+                    TextField(
+                      key: const Key('alert-rise-percent'),
+                      controller: upField,
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true),
+                      decoration: InputDecoration(
+                        labelText: l10n.alertRisePercent,
+                        suffixText: '%',
+                      ),
+                      onChanged: (String text) {
+                        final double? value = Fmt.parse(text);
+                        if (value == null || value <= 0) return;
+                        setSheet(() => upPercent = value);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      key: const Key('alert-fall-percent'),
+                      controller: downField,
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true),
+                      decoration: InputDecoration(
+                        labelText: l10n.alertFallPercent,
+                        suffixText: '%',
+                      ),
+                      onChanged: (String text) {
+                        final double? value = Fmt.parse(text);
+                        if (value == null || value <= 0) return;
+                        setSheet(() => downPercent = value);
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   TextField(
                     controller: target,
@@ -514,6 +563,8 @@ class _RateAlertPageState extends State<RateAlertPage> {
     final double? targetValue = Fmt.parse(target.text);
     target.dispose();
     percentField.dispose();
+    upField.dispose();
+    downField.dispose();
 
     if (created != true || targetValue == null || !mounted) return;
 
@@ -530,6 +581,8 @@ class _RateAlertPageState extends State<RateAlertPage> {
             targetRate: targetValue,
             direction: direction,
             thresholdPercent: percent,
+            upPercent: direction == AlertDirection.either ? upPercent : 0,
+            downPercent: direction == AlertDirection.either ? downPercent : 0,
             createdAt: DateTime.now(),
           ),
         );

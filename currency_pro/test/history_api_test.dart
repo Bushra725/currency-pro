@@ -61,8 +61,11 @@ void main() {
     api.dispose();
   });
 
-  test('a non-ECB pair loads from the USD archive table', () async {
+  test('history lookup works when the pair is not USD/EUR', () async {
     final HistoryApi api = HistoryApi(client: _UsdTableClient());
+    expect(api.supports('PKR', 'INR'), isTrue);
+    expect(api.supports('ANG', 'AED'), isTrue);
+    expect(api.supports('USD', 'USD'), isFalse);
     final HistorySeries result = await api.series('PKR', 'INR', 10);
 
     expect(result.failed, isFalse);

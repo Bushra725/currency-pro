@@ -30,12 +30,10 @@ class HistoryApi {
     'ZAR',
   };
 
-  bool supports(String from, String to) {
-    final cryptoish = AppConfig.coinGeckoIds.containsKey(from) ||
-        AppConfig.coinGeckoIds.containsKey(to);
-    if (cryptoish) return true;
-    return ecbSupported.contains(from) && ecbSupported.contains(to);
-  }
+  /// Every distinct pair can be charted: ECB majors from Frankfurter, and
+  /// every other fiat pair from the same USD archive as the live rates.
+  bool supports(String from, String to) =>
+      from.toUpperCase() != to.toUpperCase();
 
   /// Daily points of "1 [from] = value [to]" for the last [days].
   ///

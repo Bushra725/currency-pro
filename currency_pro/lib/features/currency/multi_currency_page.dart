@@ -77,7 +77,7 @@ class _MultiCurrencyPageState extends State<MultiCurrencyPage> {
     final String source = codes[_activeIndex];
 
     final StringBuffer buffer = StringBuffer()
-      ..writeln('${settings.format(_typed)} $source =');
+      ..writeln('${settings.formatConversion(_typed)} $source =');
     for (int i = 0; i < codes.length; i++) {
       if (i == _activeIndex) continue;
       final double? value = rates.convert(_typed, source, codes[i]);
@@ -90,6 +90,25 @@ class _MultiCurrencyPageState extends State<MultiCurrencyPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(L10n.read(context).allCopied)),
     );
+  }
+
+  Future<void> _addCurrency() async {
+    final SettingsProvider settings = context.read<SettingsProvider>();
+    final Currency? picked = await CurrencyPicker.show(
+      context,
+      title: L10n.read(context).addCurrency,
+      exclude: settings.activeMultiSet,
+    );
+    if (picked == null || !mounted) return;
+    const List<int> steps = <int>[2, 4, 8];
+    final int count = settings.multiCount;
+    if (count < 8) {
+      final int next = steps.firstWhere((int step) => step > count);
+      await settings.setMultiAt(count, picked.code);
+      await settings.setMultiCount(next);
+      return;
+    }
+    await settings.setMultiAt(settings.multiSet.length - 1, picked.code);
   }
 
   @override
@@ -135,6 +154,18 @@ class _MultiCurrencyPageState extends State<MultiCurrencyPage> {
       body: Column(
         children: <Widget>[
           const OfflineBanner(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: FilledButton.tonalIcon(
+              key: const Key('multi-add-currency'),
+              onPressed: _addCurrency,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(l10n.addCurrency),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(double.infinity, 44),
+              ),
+            ),
+          ),
           Expanded(
             flex: settings.multiCount > 4 ? 5 : 3,
             child: ListView.separated(

@@ -477,8 +477,7 @@ class _MetalsPageState extends State<MetalsPage>
                   Text(
                     shown == null
                         ? l10n.unavailable
-                        : '${settings.format(shown, decimals: shown < 10 ? 4 : 2)} '
-                            '${base.code}',
+                        : '${_priceText(settings, shown)} ${base.code}',
                     style: TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.w800,
@@ -749,9 +748,7 @@ class _MetalsPageState extends State<MetalsPage>
 
   String _crossCell(RatesProvider rates, String row, String col) {
     if (row == col) return '1';
-    final double? value = rates.pairRate(row, col);
-    if (value == null) return '—';
-    return Fmt.smart(value, maxDecimals: 4);
+    return _rateText(rates.pairRate(row, col));
   }
 
   Widget _keyPointsTable(
@@ -834,6 +831,26 @@ class _MetalsPageState extends State<MetalsPage>
 
   String _rateText(double? value) {
     if (value == null) return '—';
+    return _fxAmount(value);
+  }
+
+  /// Prices and cross rates keep small fractions. A value under 1 is never
+  /// cut down to 0, and it is never shown as a whole number of cents.
+  String _priceText(SettingsProvider settings, double value) {
+    if (value.abs() > 0 && value.abs() < 1) {
+      return Fmt.conversion(
+        value,
+        mode: settings.rounding,
+        grouping: settings.grouping,
+      );
+    }
+    return settings.format(value, decimals: value.abs() < 10 ? 4 : 2);
+  }
+
+  String _fxAmount(double value) {
+    if (value.abs() > 0 && value.abs() < 1) {
+      return Fmt.conversion(value, grouping: false);
+    }
     return Fmt.smart(value, maxDecimals: 4);
   }
 
@@ -970,7 +987,7 @@ class _MetalsPageState extends State<MetalsPage>
                     Text(
                       value == null
                           ? '—'
-                          : '${settings.format(value)} ${base.code}',
+                          : '${_priceText(settings, value)} ${base.code}',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,

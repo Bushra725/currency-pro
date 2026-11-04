@@ -53,6 +53,25 @@ void main() {
       );
     });
 
+    test('an either-way alert can use a different rise and fall percent', () {
+      final RateAlert alert = RateAlert(
+        id: '2',
+        from: 'USD',
+        to: 'EUR',
+        startRate: 1,
+        targetRate: 1.05,
+        direction: AlertDirection.either,
+        thresholdPercent: 5,
+        upPercent: 5,
+        downPercent: 2,
+        createdAt: DateTime(2026, 11, 3),
+      );
+      expect(alert.isTriggered(1.05), isTrue);
+      expect(alert.isTriggered(0.98), isTrue);
+      expect(alert.isTriggered(1.03), isFalse);
+      expect(alert.isTriggered(0.99), isFalse);
+    });
+
     test('an either-way alert fires on a rise or a fall of that percent', () {
       final RateAlert alert = RateAlert(
         id: '1',
