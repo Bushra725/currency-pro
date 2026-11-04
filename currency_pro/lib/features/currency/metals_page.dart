@@ -263,7 +263,6 @@ class _MetalsPageState extends State<MetalsPage>
 
   Widget _baseCurrencyRow(
     AppPalette p,
-    SettingsProvider settings,
     Currency base,
     Key key, {
     String? label,
@@ -275,15 +274,9 @@ class _MetalsPageState extends State<MetalsPage>
       child: InkWell(
         key: key,
         borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          final Currency? picked = await CurrencyPicker.show(
-            context,
-            title: label ?? L10n.read(context).baseCurrency,
-          );
-          if (picked != null) {
-            await settings.setBaseCode(picked.code);
-          }
-        },
+        onTap: () => _pickPreferredCurrency(
+          title: label ?? L10n.read(context).baseCurrency,
+        ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
@@ -315,6 +308,15 @@ class _MetalsPageState extends State<MetalsPage>
     );
   }
 
+  Future<void> _pickPreferredCurrency({String? title}) async {
+    final Currency? picked = await CurrencyPicker.show(
+      context,
+      title: title ?? L10n.read(context).baseCurrency,
+    );
+    if (picked == null || !mounted) return;
+    await context.read<SettingsProvider>().setBaseCode(picked.code);
+  }
+
   Widget _addCurrencyButton(Key key, VoidCallback onPressed) {
     return FilledButton.tonalIcon(
       key: key,
@@ -342,7 +344,7 @@ class _MetalsPageState extends State<MetalsPage>
           padding: const EdgeInsets.all(12),
           child: Column(
             children: <Widget>[
-              _baseCurrencyRow(p, settings, base, const Key('price-base')),
+              _baseCurrencyRow(p, base, const Key('price-base')),
               const SizedBox(height: 10),
               Row(
                 children: <Widget>[
@@ -867,7 +869,6 @@ class _MetalsPageState extends State<MetalsPage>
             children: <Widget>[
               _baseCurrencyRow(
                 p,
-                settings,
                 base,
                 const Key('assets-base'),
                 label: l10n.resultCurrency,
@@ -899,6 +900,11 @@ class _MetalsPageState extends State<MetalsPage>
                 ),
             ],
           ),
+        ),
+        const SizedBox(height: 10),
+        _addCurrencyButton(
+          const Key('assets-add-currency'),
+          () => _pickPreferredCurrency(title: l10n.resultCurrency),
         ),
         const SizedBox(height: 12),
         SectionCard(

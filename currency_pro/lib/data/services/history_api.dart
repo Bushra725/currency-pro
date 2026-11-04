@@ -31,10 +31,8 @@ class HistoryApi {
   };
 
   bool supports(String from, String to) {
-    final cryptoish = AppConfig.coinGeckoIds.containsKey(from) ||
-        AppConfig.coinGeckoIds.containsKey(to);
-    if (cryptoish) return true;
-    return ecbSupported.contains(from) && ecbSupported.contains(to);
+    if (from == to) return false;
+    return true;
   }
 
   /// Daily points of "1 [from] = value [to]" for the last [days].

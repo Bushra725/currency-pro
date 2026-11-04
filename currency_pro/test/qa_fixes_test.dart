@@ -617,9 +617,11 @@ void main() {
     await tester.tap(find.widgetWithText(Tab, 'My assets'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('assets-base')), findsOneWidget);
+    expect(find.byKey(const Key('assets-add-currency')), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('asset-unit-XAU')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('assets-base')));
+    await tester.ensureVisible(find.byKey(const Key('assets-add-currency')));
+    await tester.tap(find.byKey(const Key('assets-add-currency')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Euro');
     await tester.pumpAndSettle();
