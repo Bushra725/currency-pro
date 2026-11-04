@@ -8,7 +8,7 @@ class AppConfig {
   const AppConfig._();
 
   static const String appName = 'CurrencyPro';
-  static const String appVersion = '1.6.6';
+  static const String appVersion = '1.6.7';
   static const String supportEmail = 'app@theoccess.com';
   static const String githubRepo = 'https://github.com/theoccess/currency-pro';
   static const String privacyPolicyUrl =

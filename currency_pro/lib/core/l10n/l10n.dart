@@ -287,6 +287,9 @@ class L10n {
   String get localCurrency => t('localCurrency');
   String homeCode(String code) => t('homeCode').replaceAll('{code}', code);
   String localCode(String code) => t('localCode').replaceAll('{code}', code);
+  String tripPairLine(String home, String local) => t('tripPairLine')
+      .replaceAll('{home}', home)
+      .replaceAll('{local}', local);
   String get budgetLabel => t('budgetLabel');
   String get budgetInDestination => t('budgetInDestination');
   String homeEquivalent(String amount, String code) => t('homeEquivalent').replaceAll('{amount}', amount).replaceAll('{code}', code);
@@ -1111,6 +1114,8 @@ const Map<String, String> _en = <String, String>{
   'localCurrency': 'Destination Country Currency',
   'homeCode': 'Base Country Currency: {code}',
   'localCode': 'Destination Country Currency: {code}',
+  'tripPairLine':
+      'Home Country {home} · Destination Country {local}',
   'budgetLabel': 'Budget',
   'budgetInDestination': 'Budget (Destination Country Currency)',
   'homeEquivalent':
@@ -1617,6 +1622,8 @@ const Map<String, String> _es = <String, String>{
   'localCurrency': 'Moneda del país de destino',
   'homeCode': 'Moneda del país base: {code}',
   'localCode': 'Moneda del país de destino: {code}',
+  'tripPairLine':
+      'País de origen {home} · País de destino {local}',
   'budgetLabel': 'Presupuesto',
   'budgetInDestination': 'Presupuesto (moneda del país de destino)',
   'homeEquivalent': 'Unos {amount} {code} en casa',
@@ -2122,6 +2129,8 @@ const Map<String, String> _fr = <String, String>{
   'localCurrency': 'Devise du pays de destination',
   'homeCode': 'Devise du pays de base : {code}',
   'localCode': 'Devise du pays de destination : {code}',
+  'tripPairLine':
+      'Pays d\'origine {home} · Pays de destination {local}',
   'budgetLabel': 'Budget',
   'budgetInDestination': 'Budget (devise du pays de destination)',
   'homeEquivalent': 'Environ {amount} {code} chez vous',
@@ -2627,6 +2636,7 @@ const Map<String, String> _de = <String, String>{
   'localCurrency': 'Währung des Ziellandes',
   'homeCode': 'Währung des Heimatlandes: {code}',
   'localCode': 'Währung des Ziellandes: {code}',
+  'tripPairLine': 'Heimatland {home} · Zielland {local}',
   'budgetLabel': 'Budget',
   'budgetInDestination': 'Budget (Währung des Ziellandes)',
   'homeEquivalent': 'Etwa {amount} {code} zu Hause',
@@ -3131,6 +3141,7 @@ const Map<String, String> _ar = <String, String>{
   'localCurrency': 'عملة بلد الوجهة',
   'homeCode': 'عملة البلد الأساسي: {code}',
   'localCode': 'عملة بلد الوجهة: {code}',
+  'tripPairLine': 'البلد الأصلي {home} · بلد الوجهة {local}',
   'budgetLabel': 'الميزانية',
   'budgetInDestination': 'الميزانية (عملة بلد الوجهة)',
   'homeEquivalent': 'حوالي {amount} {code} في بلدك',
@@ -3635,6 +3646,7 @@ const Map<String, String> _ur = <String, String>{
   'localCurrency': 'منزل ملک کی کرنسی',
   'homeCode': 'بنیادی ملک کی کرنسی: {code}',
   'localCode': 'منزل ملک کی کرنسی: {code}',
+  'tripPairLine': 'اصل ملک {home} · منزل ملک {local}',
   'budgetLabel': 'بجٹ',
   'budgetInDestination': 'بجٹ (منزل ملک کی کرنسی)',
   'homeEquivalent': 'گھر پر تقریباً {amount} {code}',
@@ -4139,6 +4151,7 @@ const Map<String, String> _hi = <String, String>{
   'localCurrency': 'गंतव्य देश मुद्रा',
   'homeCode': 'आधार देश मुद्रा: {code}',
   'localCode': 'गंतव्य देश मुद्रा: {code}',
+  'tripPairLine': 'मूल देश {home} · गंतव्य देश {local}',
   'budgetLabel': 'बजट',
   'budgetInDestination': 'बजट (गंतव्य देश मुद्रा)',
   'homeEquivalent': 'घर पर लगभग {amount} {code}',
@@ -4635,6 +4648,7 @@ const Map<String, String> _zh = <String, String>{
   'localCurrency': '目的地国家货币',
   'homeCode': '基准国家货币：{code}',
   'localCode': '目的地国家货币：{code}',
+  'tripPairLine': '来源国家 {home} · 目的地国家 {local}',
   'budgetLabel': '预算',
   'budgetInDestination': '预算（目的地国家货币）',
   'homeEquivalent': '约合本国 {amount} {code}',
@@ -5140,6 +5154,8 @@ const Map<String, String> _pt = <String, String>{
   'localCurrency': 'Moeda do país de destino',
   'homeCode': 'Moeda do país base: {code}',
   'localCode': 'Moeda do país de destino: {code}',
+  'tripPairLine':
+      'País de origem {home} · País de destino {local}',
   'budgetLabel': 'Orçamento',
   'budgetInDestination': 'Orçamento (moeda do país de destino)',
   'homeEquivalent': 'Cerca de {amount} {code} em casa',
@@ -5644,6 +5660,7 @@ const Map<String, String> _tr = <String, String>{
   'localCurrency': 'Varış ülkesi para birimi',
   'homeCode': 'Temel ülke para birimi: {code}',
   'localCode': 'Varış ülkesi para birimi: {code}',
+  'tripPairLine': 'Ana ülke {home} · Varış ülkesi {local}',
   'budgetLabel': 'Bütçe',
   'budgetInDestination': 'Bütçe (varış ülkesi para birimi)',
   'homeEquivalent': 'Evde yaklaşık {amount} {code}',
@@ -6149,6 +6166,7 @@ const Map<String, String> _id = <String, String>{
   'localCurrency': 'Mata uang negara tujuan',
   'homeCode': 'Mata uang negara dasar: {code}',
   'localCode': 'Mata uang negara tujuan: {code}',
+  'tripPairLine': 'Negara asal {home} · Negara tujuan {local}',
   'budgetLabel': 'Anggaran',
   'budgetInDestination': 'Anggaran (mata uang negara tujuan)',
   'homeEquivalent': 'Sekitar {amount} {code} di negara asal',
@@ -6654,6 +6672,8 @@ const Map<String, String> _it = <String, String>{
   'localCurrency': 'Valuta del paese di destinazione',
   'homeCode': 'Valuta del paese di base: {code}',
   'localCode': 'Valuta del paese di destinazione: {code}',
+  'tripPairLine':
+      'Paese di origine {home} · Paese di destinazione {local}',
   'budgetLabel': 'Budget',
   'budgetInDestination': 'Budget (valuta del paese di destinazione)',
   'homeEquivalent': 'Circa {amount} {code} a casa',
@@ -7159,6 +7179,8 @@ const Map<String, String> _ru = <String, String>{
   'localCurrency': 'Валюта страны назначения',
   'homeCode': 'Валюта базовой страны: {code}',
   'localCode': 'Валюта страны назначения: {code}',
+  'tripPairLine':
+      'Страна проживания {home} · Страна назначения {local}',
   'budgetLabel': 'Бюджет',
   'budgetInDestination': 'Бюджет (валюта страны назначения)',
   'homeEquivalent': 'Около {amount} {code} дома',
@@ -7657,6 +7679,7 @@ const Map<String, String> _ja = <String, String>{
   'localCurrency': '渡航先の通貨',
   'homeCode': '基準国の通貨: {code}',
   'localCode': '渡航先の通貨: {code}',
+  'tripPairLine': '母国 {home} · 渡航先 {local}',
   'budgetLabel': '予算',
   'budgetInDestination': '予算（渡航先の通貨）',
   'homeEquivalent': '自国通貨で約 {amount} {code}',

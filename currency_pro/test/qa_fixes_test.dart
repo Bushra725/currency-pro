@@ -774,14 +774,16 @@ void main() {
     expect(find.text('100.00 EUR'), findsWidgets);
     expect(find.text('0.00 EUR'), findsOneWidget);
     expect(
-      find.text('Equals 0.00 USD in Base Country Currency'),
+      find.text('Home Country USD · Destination Country EUR'),
       findsOneWidget,
     );
-    expect(
-      find.text('Equals 111.11 USD in Base Country Currency'),
-      findsWidgets,
-    );
-    expect(find.text('Export CSV'), findsWidgets);
+    expect(find.text('Budget'), findsWidgets);
+    expect(find.text('Spent'), findsWidgets);
+    expect(find.text('Left'), findsOneWidget);
+    expect(find.text('≈ 0.00 USD'), findsOneWidget);
+    expect(find.text('≈ 111.11 USD'), findsOneWidget);
+    expect(find.text('EXPENSE'), findsOneWidget);
+    expect(find.text('Spending overview'), findsOneWidget);
 
     await tester.tap(find.text('Trip to EUR'));
     await tester.pumpAndSettle();
