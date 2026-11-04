@@ -70,6 +70,29 @@ void main() {
     expect(result.points.last.value, closeTo(88 / 277, 0.001));
     api.dispose();
   });
+
+  test('a cross pair loads from Yahoo USD charts when the direct symbol is missing',
+      () async {
+    final HistoryApi api = HistoryApi(client: _UsdYahooCrossClient());
+    final HistorySeries result = await api.series('GBP', 'JPY', 30);
+
+    expect(result.failed, isFalse);
+    expect(result.points.length, greaterThanOrEqualTo(2));
+    expect(result.points.last.value, closeTo(1.27 * 150.0, 0.01));
+    api.dispose();
+  });
+
+  test('the USD archive quotes every pair from the same daily table', () async {
+    final HistoryApi api = HistoryApi(client: _UsdTableClient());
+    final HistorySeries gbpPkr = await api.series('GBP', 'PKR', 10);
+    final HistorySeries usdAed = await api.series('USD', 'AED', 10);
+
+    expect(gbpPkr.failed, isFalse);
+    expect(gbpPkr.points.last.value, closeTo(277 / 1.27, 0.01));
+    expect(usdAed.failed, isFalse);
+    expect(usdAed.points.last.value, closeTo(3.67, 0.001));
+    api.dispose();
+  });
 }
 
 class _ArchiveClient extends http.BaseClient {
@@ -160,7 +183,12 @@ class _UsdTableClient extends http.BaseClient {
     final String url = request.url.toString();
     if (url.contains('/currencies/usd.min.json')) {
       return _json(<String, dynamic>{
-        'usd': <String, double>{'pkr': 277, 'inr': 88, 'aed': 3.67},
+        'usd': <String, double>{
+          'pkr': 277,
+          'inr': 88,
+          'aed': 3.67,
+          'gbp': 1.27,
+        },
       });
     }
     return _json(<String, dynamic>{'message': 'not found'}, status: 404);
@@ -186,6 +214,59 @@ class _FrankfurterClient extends http.BaseClient {
           '2026-09-01': <String, double>{'GBP': 0.78},
           '2026-09-15': <String, double>{'GBP': 0.785},
           '2026-10-01': <String, double>{'GBP': 0.79},
+        },
+      });
+    }
+    return _json(<String, dynamic>{'message': 'not found'}, status: 404);
+  }
+
+  http.StreamedResponse _json(Map<String, dynamic> body, {int status = 200}) {
+    final List<int> bytes = utf8.encode(jsonEncode(body));
+    return http.StreamedResponse(
+      Stream<List<int>>.value(bytes),
+      status,
+      headers: <String, String>{'content-type': 'application/json'},
+    );
+  }
+}
+
+class _UsdYahooCrossClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final String url = request.url.toString();
+    if (url.contains('finance/chart/GBPUSD')) {
+      return _json(<String, dynamic>{
+        'chart': <String, dynamic>{
+          'result': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'timestamp': <int>[1700000000, 1700086400, 1700172800],
+              'indicators': <String, dynamic>{
+                'quote': <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'close': <double>[1.25, 1.26, 1.27],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      });
+    }
+    if (url.contains('finance/chart/USDJPY')) {
+      return _json(<String, dynamic>{
+        'chart': <String, dynamic>{
+          'result': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'timestamp': <int>[1700000000, 1700086400, 1700172800],
+              'indicators': <String, dynamic>{
+                'quote': <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'close': <double>[148.0, 149.0, 150.0],
+                  },
+                ],
+              },
+            },
+          ],
         },
       });
     }

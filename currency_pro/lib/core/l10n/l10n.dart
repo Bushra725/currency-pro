@@ -268,6 +268,7 @@ class L10n {
   String updated(String when) => t('updated').replaceAll('{when}', when);
   String get waitingFirstUpdate => t('waitingFirstUpdate');
   String get updateRatesNow => t('updateRatesNow');
+  String get ratesUpdated => t('ratesUpdated');
   String get offlineBundled => t('offlineBundled');
   String offlineSaved(String ago) => t('offlineSaved').replaceAll('{ago}', ago);
   String serverUpdated(String provider, String ago) => t('serverUpdated')
@@ -816,6 +817,7 @@ const Map<String, String> _en = <String, String>{
   'offlineSaved': 'Offline — showing last updated rates from {ago}',
   'serverUpdated': '{provider} · updated {ago}',
   'ratesUnreachable': 'Could not reach the rate server. Check your connection and try again.',
+  'ratesUpdated': 'Live rates updated.',
   'exampleValue': 'Example: {value}',
   'roundingMode': 'Rounding mode',
   'roundHalfUp': 'Round half up',

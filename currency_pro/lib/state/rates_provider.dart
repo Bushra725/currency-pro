@@ -31,6 +31,7 @@ class RatesProvider extends ChangeNotifier {
   bool _lastFetchFailed = false;
   bool _usingFallback = false;
   int _generation = 0;
+  int _refreshSeq = 0;
 
   RateSnapshot get snapshot => _snapshot;
   RatesStatus get status => _status;
@@ -64,18 +65,23 @@ class RatesProvider extends ChangeNotifier {
     await refresh();
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh({bool force = false}) async {
+    if (_status == RatesStatus.loading && !force) return;
+    final int seq = ++_refreshSeq;
     _status = RatesStatus.loading;
     _failure = null;
     notifyListeners();
     try {
-      _snapshot = await _repo.refresh();
+      final RateSnapshot next = await _repo.refresh();
+      if (seq != _refreshSeq) return;
+      _snapshot = next;
       _status = RatesStatus.ready;
       _lastFetchFailed = false;
       _usingFallback = _snapshot.provider == FallbackRates.providerName;
       _generation++;
     } catch (e, stack) {
       debugPrint('Rate refresh failed: $e\n$stack');
+      if (seq != _refreshSeq) return;
       _failure = RatesFailure.unreachable;
       _lastFetchFailed = true;
       _usingFallback = _snapshot.provider == FallbackRates.providerName;

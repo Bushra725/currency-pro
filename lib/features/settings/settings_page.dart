@@ -45,10 +45,17 @@ class SettingsPage extends StatelessWidget {
                         : 'No data downloaded yet',
                     style: const TextStyle(fontSize: 11.5),
                   ),
-                  trailing: TextButton(
-                    onPressed: () => rates.refresh(),
-                    child: const Text('UPDATE'),
-                  ),
+                  onTap: () => _refreshRates(context),
+                  trailing: rates.isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : FilledButton(
+                          onPressed: () => _refreshRates(context),
+                          child: const Text('UPDATE'),
+                        ),
                 ),
                 Divider(height: 1, color: p.outline.withOpacity(0.5)),
                 ListTile(
@@ -300,4 +307,19 @@ class SettingsPage extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _refreshRates(BuildContext context) async {
+  final RatesProvider rates = context.read<RatesProvider>();
+  await rates.refresh(force: true);
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        rates.error == null
+            ? 'Live rates updated.'
+            : 'Could not reach the rate server. Check your connection and try again.',
+      ),
+    ),
+  );
 }

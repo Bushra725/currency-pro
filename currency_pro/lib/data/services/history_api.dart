@@ -54,10 +54,10 @@ class HistoryApi {
     }
   }
 
-  /// Fast single-request feeds (ECB, then Yahoo) are tried before the
-  /// dated CDN archive. The archive issues many parallel requests and
-  /// used to run first, so a slow day-file could time out the whole
-  /// load and the chart called a working connection a network error.
+  /// Yahoo (one request) is tried first because frankfurter.app / .dev
+  /// time out on many networks, which made every pair except USD/EUR look
+  /// unpublished. The USD daily archive then covers codes Yahoo omits.
+  /// ECB is last: useful when it answers, too slow to block the others.
   Future<List<RatePoint>> _bestSeries(String from, String to, int days) async {
     final bool fromCrypto = AppConfig.coinGeckoIds.containsKey(from);
     final bool toCrypto = AppConfig.coinGeckoIds.containsKey(to);
@@ -83,19 +83,6 @@ class HistoryApi {
       );
       if (crypto.length >= 2) return crypto;
     }
-
-    if (ecbSupported.contains(from) && ecbSupported.contains(to)) {
-      final List<RatePoint> ecb =
-          await attempt(() => _ecbSeries(from, to, days));
-      if (ecb.length >= 2) return ecb;
-    }
-
-    // Same USD daily table the live rate feed uses, so any pair that
-    // converts on the home screen can also draw a chart.
-    final List<RatePoint> archived = await attempt(
-      () => _archiveSeries(from, to, days),
-    );
-    if (archived.length >= 2) return _tail(archived, days);
 
     final List<RatePoint> direct = await attempt(
       () => _yahooSymbol(
@@ -134,37 +121,41 @@ class HistoryApi {
       if (crossed.length >= 2) return _tail(crossed, days);
     }
 
+    final List<RatePoint> archived = await attempt(
+      () => _archiveSeries(from, to, days),
+    );
+    if (archived.length >= 2) return _tail(archived, days);
+
+    if (ecbSupported.contains(from) && ecbSupported.contains(to)) {
+      final List<RatePoint> ecb =
+          await attempt(() => _ecbSeries(from, to, days));
+      if (ecb.length >= 2) return ecb;
+    }
+
     if (!reachedHost && lastError != null) {
       throw lastError!;
     }
     return const <RatePoint>[];
   }
 
-  /// Daily closes from the public currency archive. Missing days are skipped.
-  /// A total network failure is thrown so another source can still be tried.
+  List<_UsdDay>? _usdTables;
+  int _usdTableDays = 0;
+
+  /// Daily closes from the public USD archive. One USD table per day can
+  /// quote every fiat pair, so changing USD/EUR → GBP/PKR reuses the cache.
   Future<List<RatePoint>> _archiveSeries(
     String from,
     String to,
     int days,
   ) async {
-    final int step = days <= 16
-        ? 1
-        : days <= 100
-            ? 4
-            : days <= 370
-                ? 14
-                : 28;
-    final DateTime end = DateTime.now().toUtc();
-    final List<DateTime> dates = <DateTime>[];
-    final Set<String> seen = <String>{};
-    for (int ago = days; ago >= 1; ago -= step) {
-      final DateTime day = _weekday(end.subtract(Duration(days: ago)));
-      if (seen.add(_dayKey(day))) dates.add(day);
-    }
+    final List<_UsdDay> tables = await _loadUsdTables(days);
+    final List<RatePoint> fromUsd = _pointsFromUsdTables(tables, from, to);
+    if (fromUsd.length >= 2) return fromUsd;
 
+    final List<DateTime> dates = _archiveDates(days);
     Object? failure;
     final List<RatePoint> points = <RatePoint>[];
-    const int batchSize = 3;
+    const int batchSize = 5;
     for (int start = 0; start < dates.length; start += batchSize) {
       final int endIndex = start + batchSize > dates.length
           ? dates.length
@@ -191,6 +182,114 @@ class HistoryApi {
     return points;
   }
 
+  Future<List<_UsdDay>> _loadUsdTables(int days) async {
+    if (_usdTables != null &&
+        _usdTableDays >= days &&
+        _usdTables!.length >= 2) {
+      return _usdTables!;
+    }
+    final List<DateTime> dates = _archiveDates(days);
+    Object? failure;
+    final List<_UsdDay> tables = <_UsdDay>[];
+    const int batchSize = 5;
+    for (int start = 0; start < dates.length; start += batchSize) {
+      final int endIndex = start + batchSize > dates.length
+          ? dates.length
+          : start + batchSize;
+      final List<_UsdDay?> batch = await Future.wait(
+        dates.sublist(start, endIndex).map((DateTime day) async {
+          try {
+            return await _usdTableDay(day);
+          } catch (e) {
+            failure = e;
+            return null;
+          }
+        }),
+      );
+      for (final _UsdDay? row in batch) {
+        if (row != null) tables.add(row);
+      }
+    }
+    tables.sort((_UsdDay a, _UsdDay b) => a.date.compareTo(b.date));
+    if (tables.length >= 2) {
+      _usdTables = tables;
+      _usdTableDays = days;
+      return tables;
+    }
+    if (failure != null && tables.isEmpty) throw failure!;
+    return tables;
+  }
+
+  List<DateTime> _archiveDates(int days) {
+    final int step = days <= 16
+        ? 1
+        : days <= 100
+            ? 7
+            : days <= 370
+                ? 14
+                : 28;
+    final DateTime end = DateTime.now().toUtc();
+    final List<DateTime> dates = <DateTime>[];
+    final Set<String> seen = <String>{};
+    for (int ago = days; ago >= 1; ago -= step) {
+      final DateTime day = _weekday(end.subtract(Duration(days: ago)));
+      if (seen.add(_dayKey(day))) dates.add(day);
+    }
+    return dates;
+  }
+
+  Future<_UsdDay?> _usdTableDay(DateTime day) async {
+    final DateTime utc = day.toUtc();
+    for (final String url in AppConfig.fawazOn(utc, 'USD')) {
+      try {
+        final http.Response res = await AppHttp.get(
+          _client,
+          Uri.parse(url),
+          timeout: const Duration(seconds: 5),
+        );
+        if (res.statusCode != 200) continue;
+        final Map<String, double>? usd = _usdMap(res.body);
+        if (usd != null && usd.isNotEmpty) {
+          return _UsdDay(DateTime.utc(utc.year, utc.month, utc.day, 12), usd);
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+    return null;
+  }
+
+  Map<String, double>? _usdMap(String body) {
+    final dynamic decoded = jsonDecode(body);
+    if (decoded is! Map) return null;
+    final dynamic usd = decoded['usd'];
+    if (usd is! Map) return null;
+    final Map<String, double> out = <String, double>{'usd': 1};
+    usd.forEach((dynamic key, dynamic value) {
+      if (value is num && value > 0) {
+        out[key.toString().toLowerCase()] = value.toDouble();
+      }
+    });
+    return out.length <= 1 ? null : out;
+  }
+
+  List<RatePoint> _pointsFromUsdTables(
+    List<_UsdDay> tables,
+    String from,
+    String to,
+  ) {
+    final String fromCode = from.toLowerCase();
+    final String toCode = to.toLowerCase();
+    final List<RatePoint> points = <RatePoint>[];
+    for (final _UsdDay row in tables) {
+      final double? fromPerUsd = fromCode == 'usd' ? 1.0 : row.usd[fromCode];
+      final double? toPerUsd = toCode == 'usd' ? 1.0 : row.usd[toCode];
+      if (fromPerUsd == null || toPerUsd == null || fromPerUsd <= 0) continue;
+      points.add(RatePoint(row.date, toPerUsd / fromPerUsd));
+    }
+    return points;
+  }
+
   Future<RatePoint?> _archiveDay(String from, String to, DateTime day) async {
     final DateTime utc = day.toUtc();
     Object? failure;
@@ -203,7 +302,7 @@ class HistoryApi {
         final http.Response res = await AppHttp.get(
           _client,
           Uri.parse(url),
-          timeout: const Duration(seconds: 8),
+          timeout: const Duration(seconds: 5),
         );
         if (res.statusCode == 404) continue;
         if (res.statusCode != 200) {
@@ -281,19 +380,34 @@ class HistoryApi {
     int days, {
     bool invert = false,
   }) async {
-    final http.Response res = await AppHttp.get(
-      _client,
-      Uri.parse(AppConfig.yahooChart(symbol, days)),
-      timeout: const Duration(seconds: 10),
-      extraHeaders: const <String, String>{
-        'User-Agent':
-            'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) '
-                'AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
-      },
-    );
-    if (res.statusCode == 404) return <RatePoint>[];
-    if (res.statusCode != 200) {
-      throw StateError('Chart history request was rejected');
+    Object? error;
+    http.Response? res;
+    for (final String url in AppConfig.yahooChartUrls(symbol, days)) {
+      try {
+        final http.Response candidate = await AppHttp.get(
+          _client,
+          Uri.parse(url),
+          timeout: const Duration(seconds: 8),
+          extraHeaders: const <String, String>{
+            'User-Agent':
+                'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) '
+                    'AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+          },
+        );
+        if (candidate.statusCode == 404) continue;
+        if (candidate.statusCode != 200) {
+          error = StateError('Chart history request was rejected');
+          continue;
+        }
+        res = candidate;
+        break;
+      } catch (e) {
+        error = e;
+      }
+    }
+    if (res == null) {
+      if (error != null) throw error;
+      return <RatePoint>[];
     }
     final List<RatePoint> points = _yahooPoints(res.body);
     if (!invert) return points;
@@ -379,7 +493,7 @@ class HistoryApi {
         final http.Response candidate = await AppHttp.get(
           _client,
           Uri.parse(url),
-          timeout: const Duration(seconds: 10),
+          timeout: const Duration(seconds: 4),
         );
         if (candidate.statusCode == 200) {
           res = candidate;
@@ -473,6 +587,13 @@ class HistoryApi {
     _client.close();
     _metals.dispose();
   }
+}
+
+class _UsdDay {
+  const _UsdDay(this.date, this.usd);
+
+  final DateTime date;
+  final Map<String, double> usd;
 }
 
 /// Chart points, or a failure that carries no URL, status code, or query.

@@ -118,6 +118,16 @@ class TravelBudgetPage extends StatelessWidget {
       builder: (BuildContext sheetContext) => StatefulBuilder(
         builder: (BuildContext context, StateSetter setSheet) {
           final AppPalette p = context.palette;
+          final RatesProvider rates = context.watch<RatesProvider>();
+          final SettingsProvider settingsFmt =
+              context.watch<SettingsProvider>();
+          final double? entered = Fmt.parse(budget.text);
+          final double? homeAmount = entered == null || home == local
+              ? null
+              : rates.convert(entered, local, home);
+          final String? homeLine = home == local
+              ? null
+              : 'Equals ${homeAmount == null ? '—' : settingsFmt.format(homeAmount)} $home in Base Country Currency';
           return Padding(
             padding: EdgeInsets.only(
               left: 16,
@@ -146,45 +156,48 @@ class TravelBudgetPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          final Currency? picked =
-                              await CurrencyPicker.show(context,
-                                  title: 'Home currency');
-                          if (picked != null) {
-                            setSheet(() => home = picked.code);
-                          }
-                        },
-                        child: Text('Home: $home'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          final Currency? picked =
-                              await CurrencyPicker.show(context,
-                                  title: 'Local currency');
-                          if (picked != null) {
-                            setSheet(() => local = picked.code);
-                          }
-                        },
-                        child: Text('Local: $local'),
-                      ),
-                    ),
-                  ],
+                OutlinedButton(
+                  onPressed: () async {
+                    final Currency? picked = await CurrencyPicker.show(
+                      context,
+                      title: 'Base Country Currency',
+                    );
+                    if (picked != null) {
+                      setSheet(() => home = picked.code);
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                  child: Text('Base Country Currency: $home'),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton(
+                  onPressed: () async {
+                    final Currency? picked = await CurrencyPicker.show(
+                      context,
+                      title: 'Destination Country Currency',
+                    );
+                    if (picked != null) {
+                      setSheet(() => local = picked.code);
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                  child: Text('Destination Country Currency: $local'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: budget,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
+                  onChanged: (_) => setSheet(() {}),
                   decoration: InputDecoration(
-                    labelText: 'Budget',
-                    suffixText: home,
+                    labelText: 'Budget (Destination Country Currency)',
+                    suffixText: local,
+                    helperText: homeLine,
+                    helperMaxLines: 2,
                   ),
                 ),
                 const SizedBox(height: 12),

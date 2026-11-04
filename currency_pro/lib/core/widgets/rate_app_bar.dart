@@ -57,38 +57,41 @@ class RateAppBar extends StatelessWidget implements PreferredSizeWidget {
                 if (showUpdated)
                   Padding(
                     padding: const EdgeInsets.only(top: 3),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: rates.isOffline ? p.down : p.up,
+                    child: InkWell(
+                      onTap: () => rates.refresh(force: true),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: rates.isOffline ? p.down : p.up,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Text(
-                              rates.hasData
-                                  ? l10n.updated(Fmt.dateTime(rates.updatedAt))
-                                  : l10n.waitingFirstUpdate,
-                              maxLines: 1,
-                              softWrap: false,
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w500,
-                                color:
-                                    rates.isOffline ? p.down : p.textSecondary,
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(
+                                rates.hasData
+                                    ? l10n.updated(Fmt.dateTime(rates.updatedAt))
+                                    : l10n.waitingFirstUpdate,
+                                maxLines: 1,
+                                softWrap: false,
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w500,
+                                  color:
+                                      rates.isOffline ? p.down : p.textSecondary,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
               ],
@@ -110,7 +113,7 @@ class RateAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   )
                 : const Icon(Icons.refresh_rounded, size: 21),
-            onPressed: rates.isLoading ? null : () => rates.refresh(),
+            onPressed: () => rates.refresh(force: true),
           ),
         ...?actions,
         const SizedBox(width: 4),
@@ -151,7 +154,7 @@ class OfflineBanner extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () => rates.refresh(),
+            onPressed: () => rates.refresh(force: true),
             style: TextButton.styleFrom(
               minimumSize: const Size(0, 28),
               padding: const EdgeInsets.symmetric(horizontal: 10),

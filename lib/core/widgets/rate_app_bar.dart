@@ -74,7 +74,7 @@ class RateAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   )
                 : const Icon(Icons.refresh, size: 21),
-            onPressed: rates.isLoading ? null : () => rates.refresh(),
+            onPressed: () => rates.refresh(force: true),
           ),
         ...?actions,
       ],

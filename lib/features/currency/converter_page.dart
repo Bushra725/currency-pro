@@ -124,10 +124,10 @@ class _ConverterPageState extends State<ConverterPage> {
         : rates.convert(value, s.toCode, s.fromCode);
 
     final String a =
-        '${s.format(value)} ${_editingTop ? s.fromCode : s.toCode}';
+        '${s.formatConversion(value)} ${_editingTop ? s.fromCode : s.toCode}';
     final String b = other == null
         ? '—'
-        : '${s.format(other)} ${_editingTop ? s.toCode : s.fromCode}';
+        : '${s.formatConversion(other)} ${_editingTop ? s.toCode : s.fromCode}';
     return '$a = $b\n(rate from ${rates.provider}, '
         '${Fmt.dateTime(rates.updatedAt)})';
   }
@@ -181,13 +181,13 @@ class _ConverterPageState extends State<ConverterPage> {
           rates.convert(typed, from.code, to.code);
       bottomText = converted == null
           ? '—'
-          : settings.format(converted, decimals: to.decimals);
+          : settings.formatConversion(converted);
     } else {
       bottomText = _input;
       final double? converted = rates.convert(typed, to.code, from.code);
       topText = converted == null
           ? '—'
-          : settings.format(converted, decimals: from.decimals);
+          : settings.formatConversion(converted);
     }
 
     final double? unitRate = rates.pairRate(from.code, to.code);

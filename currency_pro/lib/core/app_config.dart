@@ -67,8 +67,8 @@ class AppConfig {
         '${day.day.toString().padLeft(2, '0')}';
     final String file = '/v1/currencies/${code.toLowerCase()}.min.json';
     return <String>[
-      'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@$date$file',
       'https://$date.currency-api.pages.dev$file',
+      'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@$date$file',
     ];
   }
 
@@ -92,7 +92,12 @@ class AppConfig {
   }
 
   /// Daily chart for one Yahoo symbol, such as `USDGBP=X` or `BTC-USD`.
-  static String yahooChart(String symbol, int days) {
+  static String yahooChart(String symbol, int days) =>
+      yahooChartUrls(symbol, days).first;
+
+  /// query1 is the public chart host; query2 is the same feed on a
+  /// second edge, which iOS sometimes reaches when query1 stalls.
+  static List<String> yahooChartUrls(String symbol, int days) {
     final String range = days <= 10
         ? '10d'
         : days <= 30
@@ -104,8 +109,12 @@ class AppConfig {
                     : days <= 365
                         ? '1y'
                         : '2y';
-    return 'https://query1.finance.yahoo.com/v8/finance/chart/'
-        '$symbol?interval=1d&range=$range';
+    final String path =
+        '/v8/finance/chart/$symbol?interval=1d&range=$range';
+    return <String>[
+      'https://query1.finance.yahoo.com$path',
+      'https://query2.finance.yahoo.com$path',
+    ];
   }
 
   static String frankfurterLatest(String base) =>

@@ -80,7 +80,7 @@ class _MultiCurrencyPageState extends State<MultiCurrencyPage> {
       if (i == _activeIndex) continue;
       final double? value = rates.convert(_typed, source, codes[i]);
       buffer.writeln(
-        '  ${value == null ? '—' : settings.format(value)} ${codes[i]}',
+        '  ${value == null ? '—' : settings.formatConversion(value)} ${codes[i]}',
       );
     }
     await Clipboard.setData(ClipboardData(text: buffer.toString()));
@@ -159,7 +159,7 @@ class _MultiCurrencyPageState extends State<MultiCurrencyPage> {
                       ? _input
                       : (value == null
                           ? '—'
-                          : settings.format(value, decimals: c.decimals)),
+                          : settings.formatConversion(value)),
                   onTapAmount: () => setState(() {
                     _activeIndex = index;
                     _input = '1';

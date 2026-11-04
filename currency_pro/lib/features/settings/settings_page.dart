@@ -56,10 +56,17 @@ class SettingsPage extends StatelessWidget {
                         : l10n.noDataYet,
                     style: const TextStyle(fontSize: 11.5),
                   ),
-                  trailing: TextButton(
-                    onPressed: () => rates.refresh(),
-                    child: Text(l10n.update),
-                  ),
+                  onTap: () => _refreshRates(context),
+                  trailing: rates.isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : FilledButton(
+                          onPressed: () => _refreshRates(context),
+                          child: Text(l10n.update),
+                        ),
                 ),
                 Divider(height: 1, color: p.outline.withOpacity(0.5)),
                 ListTile(
@@ -433,6 +440,16 @@ class SettingsPage extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _refreshRates(BuildContext context) async {
+  final RatesProvider rates = context.read<RatesProvider>();
+  final L10n l10n = L10n.read(context);
+  await rates.refresh(force: true);
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(rates.failureText(l10n) ?? l10n.ratesUpdated)),
+  );
 }
 
 String _roundingLabel(L10n l10n, RoundingMode mode) {
