@@ -76,96 +76,141 @@ class _ExpenseSheetState extends State<ExpenseSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                editing ? l10n.editExpense : l10n.addExpense,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: p.textPrimary,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  editing ? l10n.editExpense : l10n.addExpense,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: p.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _title,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(labelText: l10n.whatFor),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('expense-amount'),
-                controller: _amount,
-                autofocus: !editing,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: l10n.amountLabel,
-                  suffixText: widget.currency,
+                const SizedBox(height: 14),
+                TextField(
+                  key: const Key('expense-what-for'),
+                  controller: _title,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(labelText: l10n.whatFor),
                 ),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                key: const Key('expense-date'),
-                onPressed: _pickDate,
-                icon: const Icon(Icons.event, size: 18),
-                label: Text('${l10n.spendingDate}: ${Fmt.date(_date)}'),
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8,
-                children: ExpenseCategory.values.map((ExpenseCategory c) {
-                  final bool selected = c == _category;
-                  return ChoiceChip(
-                    label: Text(_chipLabel(l10n, c)),
-                    selected: selected,
-                    showCheckmark: false,
-                    onSelected: (_) => setState(() => _category = c),
-                    labelStyle: TextStyle(
-                      fontSize: 11.5,
-                      color: selected ? p.onPrimary : p.textPrimary,
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('expense-amount'),
+                  controller: _amount,
+                  autofocus: !editing,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: l10n.amountLabel,
+                    suffixText: widget.currency,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Material(
+                  color: p.surfaceAlt,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    key: const Key('expense-date'),
+                    onTap: _pickDate,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          Icon(Icons.event, size: 18, color: p.textSecondary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              l10n.spendingDate,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: p.textSecondary,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            Fmt.date(_date),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: p.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('expense-note'),
-                controller: _note,
-                minLines: 2,
-                maxLines: 4,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  labelText: l10n.expenseNote,
-                  alignLabelWithHint: true,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () {
-                  final double? value = Fmt.parse(_amount.text);
-                  if (value == null) return;
-                  Navigator.of(context).pop(
-                    ExpenseDraft(
-                      title: _title.text,
-                      note: _note.text,
-                      amount: value,
-                      category: _category,
-                      date: _date,
-                    ),
-                  );
-                },
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
+                const SizedBox(height: 14),
+                Text(
+                  l10n.category,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: p.textSecondary,
+                  ),
                 ),
-                child: Text(l10n.saveExpense),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: ExpenseCategory.values.map((ExpenseCategory c) {
+                    final bool selected = c == _category;
+                    return ChoiceChip(
+                      label: Text(_chipLabel(l10n, c)),
+                      selected: selected,
+                      showCheckmark: false,
+                      onSelected: (_) => setState(() => _category = c),
+                      labelStyle: TextStyle(
+                        fontSize: 11.5,
+                        color: selected ? p.onPrimary : p.textPrimary,
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('expense-note'),
+                  controller: _note,
+                  minLines: 2,
+                  maxLines: 4,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    labelText: l10n.expenseNote,
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () {
+                    final double? value = Fmt.parse(_amount.text);
+                    if (value == null) return;
+                    Navigator.of(context).pop(
+                      ExpenseDraft(
+                        title: _title.text,
+                        note: _note.text,
+                        amount: value,
+                        category: _category,
+                        date: _date,
+                      ),
+                    );
+                  },
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                  child: Text(l10n.saveExpense),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -90,12 +90,17 @@ class TripDetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${l10n.homeCurrency} ${trip.homeCurrency} · '
-            '${l10n.localCurrency} ${trip.localCurrency}',
-            style: TextStyle(fontSize: 12, color: p.textSecondary),
+            '${l10n.homeCurrency}: ${trip.homeCurrency}',
+            style: TextStyle(fontSize: 13, color: p.textSecondary),
+          ),
+          Text(
+            '${l10n.localCurrency}: ${trip.localCurrency}',
+            style: TextStyle(fontSize: 13, color: p.textSecondary),
           ),
           const SizedBox(height: 12),
-          _SummaryRow(trip: trip, totals: totals),
+          _SummaryCard(trip: trip, totals: totals),
+          const SizedBox(height: 10),
+          TripExportButton(onPressed: () => shareTripCsv(context, trip)),
           const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
@@ -118,8 +123,8 @@ class TripDetailPage extends StatelessWidget {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.trip, required this.totals});
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.trip, required this.totals});
 
   final Trip trip;
   final TripTotals totals;
@@ -129,13 +134,14 @@ class _SummaryRow extends StatelessWidget {
     final AppPalette p = context.palette;
     final L10n l10n = L10n.of(context);
     final SettingsProvider settings = context.watch<SettingsProvider>();
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: _SummaryCard(
+    return SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          TripAmountBlock(
             label: l10n.totalBudget,
-            amount: totals.budgetLocal,
-            code: totals.budgetCode,
+            value:
+                '${settings.format(totals.budgetLocal)} ${totals.budgetCode}',
             color: p.textPrimary,
             note: totals.budgetCode == trip.homeCurrency
                 ? null
@@ -146,13 +152,10 @@ class _SummaryRow extends StatelessWidget {
                     trip.homeCurrency,
                   ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _SummaryCard(
+          TripAmountBlock(
             label: l10n.spent,
-            amount: totals.spentLocal,
-            code: trip.localCurrency,
+            value:
+                '${settings.format(totals.spentLocal)} ${trip.localCurrency}',
             color: p.primary,
             note: trip.localCurrency == trip.homeCurrency
                 ? null
@@ -163,13 +166,10 @@ class _SummaryRow extends StatelessWidget {
                     trip.homeCurrency,
                   ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _SummaryCard(
+          TripAmountBlock(
             label: l10n.remaining,
-            amount: totals.remaining,
-            code: totals.budgetCode,
+            value:
+                '${settings.format(totals.remaining)} ${totals.budgetCode}',
             color: totals.remaining >= 0 ? p.up : p.down,
             note: totals.budgetCode == trip.homeCurrency
                 ? null
@@ -180,64 +180,6 @@ class _SummaryRow extends StatelessWidget {
                     trip.homeCurrency,
                   ),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.label,
-    required this.amount,
-    required this.code,
-    required this.color,
-    this.note,
-  });
-
-  final String label;
-  final double amount;
-  final String code;
-  final Color color;
-  final String? note;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppPalette p = context.palette;
-    final SettingsProvider settings = context.watch<SettingsProvider>();
-    return SectionCard(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 10.5,
-              height: 1.2,
-              color: p.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '${settings.format(amount)} $code',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
-          ),
-          if (note != null) ...<Widget>[
-            const SizedBox(height: 4),
-            Text(
-              note!,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 10, height: 1.15, color: p.textSecondary),
-            ),
-          ],
         ],
       ),
     );

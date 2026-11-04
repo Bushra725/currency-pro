@@ -1136,7 +1136,7 @@ const Map<String, String> _en = <String, String>{
   'itemsCount': '{n} ITEMS',
   'addExpense': 'Add expense',
   'whatFor': 'What for?',
-  'expenseNote': 'Note',
+  'expenseNote': 'Description / note',
   'spendingDate': 'Spending date',
   'editExpense': 'Edit expense',
   'spendingOverview': 'Spending overview',

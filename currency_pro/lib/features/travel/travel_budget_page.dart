@@ -188,29 +188,6 @@ class _NewTripSheetState extends State<_NewTripSheet> {
     super.dispose();
   }
 
-  Widget _countryChoice(AppPalette p, String label, String code) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Text(
-          label,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 10.5, height: 1.2, color: p.textSecondary),
-        ),
-        Text(
-          code,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: p.textPrimary,
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
@@ -218,146 +195,134 @@ class _NewTripSheetState extends State<_NewTripSheet> {
     final RatesProvider rates = context.watch<RatesProvider>();
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final double? entered = Fmt.parse(_budget.text);
-    final double? homeAmount = entered == null || _home == _local
+    final double? converted = entered == null || _home == _local
         ? null
         : rates.convert(entered, _local, _home);
+    final String? homeLine = _home == _local
+        ? null
+        : l10n.homeEquivalent(
+            converted == null ? '—' : settings.format(converted),
+            _home,
+          );
 
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                l10n.newTrip,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: p.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _name,
-                decoration: InputDecoration(
-                  labelText: l10n.tripName,
-                  hintText: l10n.tripNameHint,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async {
-                        final Currency? picked = await CurrencyPicker.show(
-                          context,
-                          title: l10n.homeCurrency,
-                        );
-                        if (picked != null) {
-                          setState(() => _home = picked.code);
-                        }
-                      },
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 56),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                      ),
-                      child: _countryChoice(p, l10n.homeCurrency, _home),
-                    ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  l10n.newTrip,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: p.textPrimary,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async {
-                        final Currency? picked = await CurrencyPicker.show(
-                          context,
-                          title: l10n.localCurrency,
-                        );
-                        if (picked != null) {
-                          setState(() => _local = picked.code);
-                        }
-                      },
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 56),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                      ),
-                      child: _countryChoice(p, l10n.localCurrency, _local),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _name,
+                  decoration: InputDecoration(
+                    labelText: l10n.tripName,
+                    hintText: l10n.tripNameHint,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TripCurrencyPicker(
+                  key: const Key('trip-home-currency'),
+                  label: l10n.homeCurrency,
+                  code: _home,
+                  onTap: () async {
+                    final Currency? picked = await CurrencyPicker.show(
+                      context,
+                      title: l10n.homeCurrency,
+                    );
+                    if (picked != null) {
+                      setState(() => _home = picked.code);
+                    }
+                  },
+                ),
+                const SizedBox(height: 10),
+                TripCurrencyPicker(
+                  key: const Key('trip-local-currency'),
+                  label: l10n.localCurrency,
+                  code: _local,
+                  onTap: () async {
+                    final Currency? picked = await CurrencyPicker.show(
+                      context,
+                      title: l10n.localCurrency,
+                    );
+                    if (picked != null) {
+                      setState(() => _local = picked.code);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('trip-budget'),
+                  controller: _budget,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    labelText: l10n.budgetInDestination,
+                    suffixText: _local,
+                  ),
+                ),
+                if (homeLine != null) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Text(
+                    key: const Key('trip-home-equivalent'),
+                    homeLine,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.3,
+                      color: p.textSecondary,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('trip-budget'),
-                controller: _budget,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  labelText: l10n.budgetInDestination,
-                  suffixText: _local,
-                  helperText: _home == _local
-                      ? null
-                      : l10n.homeEquivalent(
-                          homeAmount == null
-                              ? '—'
-                              : settings.format(homeAmount),
-                          _home,
-                        ),
-                  helperMaxLines: 2,
-                  helperStyle: TextStyle(
-                    fontSize: 12,
-                    height: 1.3,
-                    color: p.textSecondary,
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final DateTimeRange? picked = await showDateRangePicker(
+                      context: context,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                      initialDateRange: _range,
+                    );
+                    if (picked != null) setState(() => _range = picked);
+                  },
+                  icon: const Icon(Icons.date_range, size: 18),
+                  label: Text(
+                    '${Fmt.date(_range.start)} → ${Fmt.date(_range.end)}',
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final DateTimeRange? picked = await showDateRangePicker(
-                    context: context,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2100),
-                    initialDateRange: _range,
-                  );
-                  if (picked != null) setState(() => _range = picked);
-                },
-                icon: const Icon(Icons.date_range, size: 18),
-                label: Text(
-                  '${Fmt.date(_range.start)} → ${Fmt.date(_range.end)}',
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(
+                      _DraftTrip(
+                        name: _name.text,
+                        home: _home,
+                        local: _local,
+                        budget: Fmt.parse(_budget.text) ?? 0,
+                        range: _range,
+                      ),
+                    );
+                  },
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                  child: Text(l10n.createTrip),
                 ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(context).pop(
-                    _DraftTrip(
-                      name: _name.text,
-                      home: _home,
-                      local: _local,
-                      budget: Fmt.parse(_budget.text) ?? 0,
-                      range: _range,
-                    ),
-                  );
-                },
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
-                ),
-                child: Text(l10n.createTrip),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -383,186 +348,155 @@ class _TripCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: SectionCard(
         padding: EdgeInsets.zero,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
           children: <Widget>[
-            Expanded(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  key: Key('open-trip-${trip.id}'),
-                  onTap: () => openTripDetail(context, trip.id),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          trip.name,
-                          style: TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                            color: p.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          '${Fmt.date(trip.startDate)} → '
-                          '${Fmt.date(trip.endDate)} · ${l10n.daysCount(trip.days)}',
-                          style: TextStyle(
-                              fontSize: 11, color: p.textSecondary),
-                        ),
-                        Text(
-                          '${l10n.homeCurrency} ${trip.homeCurrency} · '
-                          '${l10n.localCurrency} ${trip.localCurrency}',
-                          style: TextStyle(
-                              fontSize: 11, color: p.textSecondary),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: Key('open-trip-${trip.id}'),
+                onTap: () => openTripDetail(context, trip.id),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 4, 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Expanded(
-                              child: _stat(
-                                p,
-                                l10n.totalBudget,
-                                '${settings.format(totals.budgetLocal)} ${totals.budgetCode}',
-                                p.textPrimary,
-                                note: totals.budgetCode == trip.homeCurrency
-                                    ? null
-                                    : homeNote(
-                                        l10n,
-                                        settings,
-                                        totals.budgetHome,
-                                        trip.homeCurrency,
-                                      ),
+                            Text(
+                              trip.name,
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                                color: p.textPrimary,
                               ),
                             ),
-                            Expanded(
-                              child: _stat(
-                                p,
-                                l10n.spent,
-                                '${settings.format(totals.spentLocal)} ${trip.localCurrency}',
-                                p.primary,
-                                note: trip.localCurrency == trip.homeCurrency
-                                    ? null
-                                    : homeNote(
-                                        l10n,
-                                        settings,
-                                        totals.spentHome,
-                                        trip.homeCurrency,
-                                      ),
-                              ),
+                            Text(
+                              '${Fmt.date(trip.startDate)} → '
+                              '${Fmt.date(trip.endDate)} · ${l10n.daysCount(trip.days)}',
+                              style: TextStyle(
+                                  fontSize: 11, color: p.textSecondary),
                             ),
-                            Expanded(
-                              child: _stat(
-                                p,
-                                l10n.remaining,
-                                '${settings.format(totals.remaining)} ${totals.budgetCode}',
-                                totals.remaining >= 0 ? p.up : p.down,
-                                note: totals.budgetCode == trip.homeCurrency
-                                    ? null
-                                    : homeNote(
-                                        l10n,
-                                        settings,
-                                        totals.remainingHome,
-                                        trip.homeCurrency,
-                                      ),
+                            Text(
+                              '${l10n.homeCurrency}: ${trip.homeCurrency}',
+                              style: TextStyle(
+                                  fontSize: 12, color: p.textSecondary),
+                            ),
+                            Text(
+                              '${l10n.localCurrency}: ${trip.localCurrency}',
+                              style: TextStyle(
+                                  fontSize: 12, color: p.textSecondary),
+                            ),
+                            const SizedBox(height: 12),
+                            TripAmountBlock(
+                              label: l10n.totalBudget,
+                              value:
+                                  '${settings.format(totals.budgetLocal)} ${totals.budgetCode}',
+                              color: p.textPrimary,
+                              note: totals.budgetCode == trip.homeCurrency
+                                  ? null
+                                  : homeNote(
+                                      l10n,
+                                      settings,
+                                      totals.budgetHome,
+                                      trip.homeCurrency,
+                                    ),
+                            ),
+                            TripAmountBlock(
+                              label: l10n.spent,
+                              value:
+                                  '${settings.format(totals.spentLocal)} ${trip.localCurrency}',
+                              color: p.primary,
+                              note: trip.localCurrency == trip.homeCurrency
+                                  ? null
+                                  : homeNote(
+                                      l10n,
+                                      settings,
+                                      totals.spentHome,
+                                      trip.homeCurrency,
+                                    ),
+                            ),
+                            TripAmountBlock(
+                              label: l10n.remaining,
+                              value:
+                                  '${settings.format(totals.remaining)} ${totals.budgetCode}',
+                              color: totals.remaining >= 0 ? p.up : p.down,
+                              note: totals.budgetCode == trip.homeCurrency
+                                  ? null
+                                  : homeNote(
+                                      l10n,
+                                      settings,
+                                      totals.remainingHome,
+                                      trip.homeCurrency,
+                                    ),
+                            ),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: LinearProgressIndicator(
+                                value: totals.ratio,
+                                minHeight: 8,
+                                backgroundColor: p.surfaceAlt,
+                                color:
+                                    totals.ratio > 0.9 ? p.down : p.primary,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: totals.ratio,
-                            minHeight: 6,
-                            backgroundColor: p.surfaceAlt,
-                            color: totals.ratio > 0.9 ? p.down : p.primary,
+                      ),
+                      Column(
+                        children: <Widget>[
+                          PopupMenuButton<String>(
+                            icon: Icon(Icons.more_vert,
+                                size: 18, color: p.textSecondary),
+                            onSelected: (String value) {
+                              if (value == 'done') {
+                                trips.toggleCompleted(trip.id);
+                              } else if (value == 'delete') {
+                                trips.remove(trip.id);
+                              } else if (value == 'export') {
+                                shareTripCsv(context, trip);
+                              }
+                            },
+                            itemBuilder: (_) => <PopupMenuEntry<String>>[
+                              PopupMenuItem<String>(
+                                value: 'export',
+                                child: Text(l10n.exportCsv),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'done',
+                                child: Text(
+                                  trip.completed
+                                      ? l10n.markOngoing
+                                      : l10n.markCompleted,
+                                ),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Text(l10n.deleteTrip),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
+                          Icon(Icons.chevron_right, color: p.textSecondary),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-            Column(
-              children: <Widget>[
-                PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert,
-                      size: 18, color: p.textSecondary),
-                  onSelected: (String value) {
-                    if (value == 'done') {
-                      trips.toggleCompleted(trip.id);
-                    } else if (value == 'delete') {
-                      trips.remove(trip.id);
-                    } else if (value == 'export') {
-                      shareTripCsv(context, trip);
-                    }
-                  },
-                  itemBuilder: (_) => <PopupMenuEntry<String>>[
-                    PopupMenuItem<String>(
-                      value: 'export',
-                      child: Text(l10n.exportCsv),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'done',
-                      child: Text(
-                        trip.completed
-                            ? l10n.markOngoing
-                            : l10n.markCompleted,
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'delete',
-                      child: Text(l10n.deleteTrip),
-                    ),
-                  ],
-                ),
-                Icon(Icons.chevron_right, color: p.textSecondary),
-              ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: TripExportButton(
+                onPressed: () => shareTripCsv(context, trip),
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _stat(
-    AppPalette p,
-    String label,
-    String value,
-    Color color, {
-    String? note,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(label,
-            style: TextStyle(fontSize: 10.5, color: p.textSecondary)),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
-        ),
-        if (note != null) ...<Widget>[
-          const SizedBox(height: 2),
-          Text(
-            note,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 10, height: 1.15, color: p.textSecondary),
-          ),
-        ],
-      ],
     );
   }
 }

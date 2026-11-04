@@ -719,6 +719,11 @@ void main() {
 
   testWidgets('a trip budget is entered in the destination currency',
       (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final _Boot boot = await _boot();
     final RateSnapshot snapshot = RateSnapshot(
       base: 'USD',
@@ -742,6 +747,8 @@ void main() {
     await tester.tap(find.text('ADD NEW TRIP'));
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('trip-home-currency')), findsOneWidget);
+    expect(find.byKey(const Key('trip-local-currency')), findsOneWidget);
     expect(find.text('Base Country Currency'), findsWidgets);
     expect(find.text('Destination Country Currency'), findsWidgets);
 
@@ -766,14 +773,30 @@ void main() {
 
     expect(find.text('100.00 EUR'), findsWidgets);
     expect(find.text('0.00 EUR'), findsOneWidget);
-    expect(find.text('≈ 0.00 USD'), findsOneWidget);
-    expect(find.text('≈ 111.11 USD'), findsWidgets);
+    expect(
+      find.text('Equals 0.00 USD in Base Country Currency'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Equals 111.11 USD in Base Country Currency'),
+      findsWidgets,
+    );
+    expect(find.text('Export CSV'), findsWidgets);
 
     await tester.tap(find.text('Trip to EUR'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('trip-detail')), findsOneWidget);
     expect(find.text('Total Budget'), findsWidgets);
     expect(find.text('Remaining'), findsWidgets);
+    expect(find.text('Export CSV'), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('Expense categories'),
+      400,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('trip-detail')),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(find.text('Expenses'), findsOneWidget);
     expect(find.text('Expense categories'), findsOneWidget);
     await tester.scrollUntilVisible(
@@ -798,6 +821,11 @@ void main() {
       tester.widget<TextField>(expenseAmount).decoration!.suffixText,
       'EUR',
     );
+    expect(find.byKey(const Key('expense-what-for')), findsOneWidget);
+    expect(find.text('What for?'), findsOneWidget);
+    expect(find.text('Description / note'), findsOneWidget);
+    expect(find.text('Spending date'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('expense-what-for')), 'Taxi');
     await tester.enterText(expenseAmount, '40');
     await tester.enterText(find.byKey(const Key('expense-note')), 'Airport taxi');
     expect(find.byKey(const Key('expense-date')), findsOneWidget);
@@ -805,10 +833,20 @@ void main() {
     await tester.tap(find.text('SAVE EXPENSE'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Taxi'), findsWidgets);
     expect(find.text('40.00 EUR'), findsWidgets);
-    expect(find.text('≈ 44.44 USD'), findsWidgets);
+    expect(
+      find.text('Equals 44.44 USD in Base Country Currency'),
+      findsWidgets,
+    );
     expect(find.text('60.00 EUR', skipOffstage: false), findsWidgets);
-    expect(find.text('≈ 66.67 USD', skipOffstage: false), findsWidgets);
+    expect(
+      find.text(
+        'Equals 66.67 USD in Base Country Currency',
+        skipOffstage: false,
+      ),
+      findsWidgets,
+    );
     expect(find.textContaining('Airport taxi'), findsOneWidget);
     expect(find.textContaining('Food'), findsWidgets);
 
@@ -829,6 +867,13 @@ void main() {
     expect(find.text('25.00 EUR'), findsWidgets);
     expect(find.text('75.00 EUR', skipOffstage: false), findsWidgets);
 
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('trip-detail')),
+        matching: find.byKey(const Key('export-csv')),
+      ),
+      findsOneWidget,
+    );
     await tester.tap(
       find.descendant(
         of: find.byKey(const Key('trip-detail')),
@@ -836,11 +881,16 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Export CSV'), findsOneWidget);
+    expect(find.text('Export CSV'), findsWidgets);
   });
 
   testWidgets('a trip detail shows expenses, category pie and daily totals',
       (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final _Boot boot = await _boot();
     final RateSnapshot snapshot = RateSnapshot(
       base: 'USD',

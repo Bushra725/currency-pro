@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/l10n/l10n.dart';
+import '../../core/theme/app_palette.dart';
+import '../../core/widgets/flag_avatar.dart';
+import '../../data/currency_lookup.dart';
 import '../../data/models/trip.dart';
 import '../../state/rates_provider.dart';
 import '../../state/settings_provider.dart';
@@ -123,7 +126,7 @@ String? homeNote(
   String code,
 ) {
   if (amount == null) return null;
-  return l10n.approxAmount(settings.format(amount), code);
+  return l10n.homeEquivalent(settings.format(amount), code);
 }
 
 String? homeAmount(
@@ -240,6 +243,133 @@ Future<void> shareTripCsv(BuildContext context, Trip trip) async {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.exportFailed)),
+    );
+  }
+}
+
+/// Full-width country-currency row used on the new-trip sheet.
+class TripCurrencyPicker extends StatelessWidget {
+  const TripCurrencyPicker({
+    super.key,
+    required this.label,
+    required this.code,
+    required this.onTap,
+  });
+
+  final String label;
+  final String code;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppPalette p = context.palette;
+    return Material(
+      color: p.surfaceAlt,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: p.textSecondary,
+                  ),
+                ),
+              ),
+              FlagAvatar(CurrencyLookup.of(code), size: 22),
+              const SizedBox(width: 6),
+              Text(
+                code,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: p.textPrimary,
+                ),
+              ),
+              Icon(Icons.expand_more, size: 18, color: p.textSecondary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Destination amount with a smaller home-currency conversion underneath.
+class TripAmountBlock extends StatelessWidget {
+  const TripAmountBlock({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.color,
+    this.note,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final String? note;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppPalette p = context.palette;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: p.textSecondary),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          if (note != null) ...<Widget>[
+            const SizedBox(height: 2),
+            Text(
+              note!,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.3,
+                color: p.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class TripExportButton extends StatelessWidget {
+  const TripExportButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      key: const Key('export-csv'),
+      onPressed: onPressed,
+      icon: const Icon(Icons.ios_share, size: 18),
+      label: Text(L10n.of(context).exportCsv),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 44),
+      ),
     );
   }
 }
