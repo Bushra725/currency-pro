@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:currency_pro/data/models/rate_snapshot.dart';
 import 'package:currency_pro/data/services/history_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;

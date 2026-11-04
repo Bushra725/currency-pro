@@ -16,3 +16,5 @@ analyzer:
     - ios/**
     - web/**
     - windows/**
+    - currency_pro/**
+    - currency_pro_ui_refresh/**

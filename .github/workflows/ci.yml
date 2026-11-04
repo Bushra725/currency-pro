@@ -8,9 +8,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: [".", "currency_pro"]
     defaults:
       run:
-        working-directory: .
+        working-directory: ${{ matrix.dir }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
