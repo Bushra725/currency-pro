@@ -18,10 +18,9 @@ class BottomAdSlot extends StatefulWidget {
 class _BottomAdSlotState extends State<BottomAdSlot> {
   bool _requested = false;
 
-  void _requestIfNeeded(int width) {
-    if (_requested || width <= 0) return;
+  void _requestIfNeeded(int width, AdsService ads) {
+    if (width <= 0 || !ads.sdkReady || _requested) return;
     _requested = true;
-    final AdsService ads = context.read<AdsService>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ads.loadBanner(width: width);
     });
@@ -62,7 +61,7 @@ class _BottomAdSlotState extends State<BottomAdSlot> {
         children: <Widget>[
           LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
-              _requestIfNeeded(constraints.maxWidth.truncate());
+              _requestIfNeeded(constraints.maxWidth.truncate(), ads);
               return SizedBox(
                 height: height,
                 width: double.infinity,

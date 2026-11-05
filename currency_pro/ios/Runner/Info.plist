@@ -85,6 +85,8 @@
 	</array>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-9297250663056879~5715532468</string>
+	<key>GADDelayAppMeasurementInit</key>
+	<true/>
 	<key>AdjustAppToken</key>
 	<string>ojq64y7uov7k</string>
 	<key>AdjustStartTrialEvent</key>

@@ -5,6 +5,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../app_config.dart';
 import '../../data/services/prefs_service.dart';
+import 'ios_tracking.dart';
 
 /// Loads every AdMob format used in the published app.
 class AdsService extends ChangeNotifier {
@@ -39,12 +40,15 @@ class AdsService extends ChangeNotifier {
   DateTime? _backgroundedAt;
 
   bool _sampleFallback = false;
+  bool _sdkReady = false;
   int _lastBannerWidth = 320;
+  int? _pendingBannerWidth;
   static bool _iosBannerSecondary = false;
   static int _iosInterstitialSlot = 0;
 
   BannerAd? get banner => adsMuted ? null : _banner;
   bool get isReady => banner != null;
+  bool get sdkReady => _sdkReady;
   bool get failed => _failed;
   bool get isLoadingBanner => _loadingBanner;
   bool get interstitialReady => _interstitial != null;
@@ -147,6 +151,13 @@ class AdsService extends ChangeNotifier {
     if (_initialized || !isSupported) return;
     _initialized = true;
     try {
+      // iOS 14+ rejects ads until ATT has been answered *while the app is
+      // active*. Measurement is delayed in Info.plist until this returns.
+      await IosTracking.request();
+      await _requestConsent();
+      try {
+        await ConsentInformation.instance.canRequestAds();
+      } catch (_) {}
       // Test-device IDs must be registered before SDK init, otherwise
       // production units return Error 3 (no fill) on a sideloaded APK.
       await MobileAds.instance.updateRequestConfiguration(
@@ -158,14 +169,22 @@ class AdsService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Mobile Ads failed to initialize: $e');
       _failed = true;
-      notifyListeners();
+    }
+    _sdkReady = true;
+    notifyListeners();
+    final int? pending = _pendingBannerWidth;
+    if (pending != null) {
+      _pendingBannerWidth = null;
+      await loadBanner(width: pending);
     }
   }
 
   Future<void> enableReturnAds() async {
     if (!isSupported) return;
     _enabled = true;
-    unawaited(_requestConsent());
+    if (!_sdkReady) {
+      await initialize();
+    }
     loadInterstitial();
     loadRewarded();
     loadRewardedInterstitial();
@@ -206,6 +225,10 @@ class AdsService extends ChangeNotifier {
   Future<void> loadBanner({required int width}) async {
     if (!isSupported || adsMuted || _loadingBanner || _banner != null) return;
     if (width <= 0) return;
+    if (!_sdkReady) {
+      _pendingBannerWidth = width;
+      return;
+    }
     _lastBannerWidth = width;
     _loadingBanner = true;
     _failed = false;
@@ -256,7 +279,10 @@ class AdsService extends ChangeNotifier {
   }
 
   bool _handleNoFill(LoadAdError error, String label) {
-    if (error.code != 3 || _forceSample) return false;
+    // 0 internal, 1 invalid request, 2 network, 3 no-fill. Sideloaded iOS
+    // builds often return 1/3 on live units until the app is on the store.
+    if (_forceSample) return false;
+    if (error.code > 3) return false;
     if (!_android && label == 'Banner' && !_iosBannerSecondary) {
       debugPrint('iOS Banner 1 no-fill; loading Banner 2');
       _iosBannerSecondary = true;

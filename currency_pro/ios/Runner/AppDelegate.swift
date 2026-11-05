@@ -1,6 +1,21 @@
+import AppTrackingTransparency
 import Flutter
 import UIKit
 import google_mobile_ads
+
+enum AdsTracking {
+  static func request(_ completion: @escaping (Int) -> Void) {
+    DispatchQueue.main.async {
+      if #available(iOS 14, *) {
+        ATTrackingManager.requestTrackingAuthorization { status in
+          completion(Int(status.rawValue))
+        }
+      } else {
+        completion(3)
+      }
+    }
+  }
+}
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -23,6 +38,22 @@ import google_mobile_ads
       .messenger()
     registerLinks(messenger)
     registerHaptics(messenger)
+    registerAds(messenger)
+  }
+
+  private func registerAds(_ messenger: FlutterBinaryMessenger) {
+    FlutterMethodChannel(
+      name: "com.theoccess.currencypro/ads",
+      binaryMessenger: messenger
+    ).setMethodCallHandler { call, result in
+      guard call.method == "requestTracking" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      AdsTracking.request { status in
+        result(status)
+      }
+    }
   }
 
   private func registerLinks(_ messenger: FlutterBinaryMessenger) {

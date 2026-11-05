@@ -31,11 +31,6 @@ Future<void> main() async {
   ads.setPremium(premium.isPremium);
   premium.addListener(() => ads.setPremium(premium.isPremium));
   try {
-    await ads.initialize();
-  } catch (e) {
-    debugPrint('Ads init failed: $e');
-  }
-  try {
     await Haptics.warmup();
   } catch (e) {
     debugPrint('Haptics warmup failed: $e');

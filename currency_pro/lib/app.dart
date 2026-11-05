@@ -174,9 +174,12 @@ class _CurrencyProAppState extends State<CurrencyProApp>
           final bool showLaunch = _showSplash || !settings.onboardingDone;
           if (!showLaunch && !_returnAdsArmed) {
             _returnAdsArmed = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
               if (!mounted) return;
-              context.read<AdsService>().enableReturnAds();
+              final AdsService ads = context.read<AdsService>();
+              await ads.initialize();
+              if (!mounted) return;
+              ads.enableReturnAds();
             });
           }
           return MediaQuery(

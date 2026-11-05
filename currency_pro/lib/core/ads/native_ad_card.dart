@@ -68,7 +68,7 @@ class _NativeAdCardState extends State<NativeAdCard> {
   void _load({bool useIosFactory = true}) {
     if (!mounted || !AdsService.isSupported) return;
     final AdsService ads = context.read<AdsService>();
-    if (ads.adsMuted) return;
+    if (ads.adsMuted || !ads.sdkReady) return;
 
     _ad?.dispose();
     _ad = null;
@@ -126,6 +126,11 @@ class _NativeAdCardState extends State<NativeAdCard> {
     final AdsService ads = context.watch<AdsService>();
     if (!AdsService.isSupported || ads.adsMuted) {
       return const SizedBox.shrink();
+    }
+    if (ads.sdkReady && _ad == null && !_failed && !_loaded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load();
+      });
     }
     if (ads.usingSampleAds && _failed && !_retriedSample) {
       _retriedSample = true;
