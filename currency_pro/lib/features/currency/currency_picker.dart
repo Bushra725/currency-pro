@@ -38,6 +38,7 @@ class CurrencyPicker extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      useRootNavigator: true,
       builder: (_) => CurrencyPicker(
         title: title,
         exclude: exclude,
@@ -81,6 +82,10 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
     }
   }
 
+  void _select(Currency currency) {
+    Navigator.of(context).pop(currency);
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppPalette p = context.palette;
@@ -90,19 +95,18 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
         : widget.title;
     final SettingsProvider settings = context.watch<SettingsProvider>();
     final RatesProvider rates = context.watch<RatesProvider>();
+    final double height = MediaQuery.sizeOf(context).height * 0.88;
 
     final List<Currency> results = CurrencyLookup
         .search(_search.text, source: _pool(settings))
         .where((Currency c) => !widget.exclude.contains(c.code))
         .toList();
 
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.85,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      builder: (BuildContext context, ScrollController controller) {
-        return Column(
+    return SizedBox(
+      height: height,
+      child: Material(
+        color: p.background,
+        child: Column(
           children: <Widget>[
             const SizedBox(height: 10),
             Container(
@@ -172,8 +176,6 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
             ),
             const SizedBox(height: 10),
             Expanded(
-              // Rows are spaced cards now — the hairline that used to sit
-              // under every currency name is gone.
               child: results.isEmpty
                   ? Center(
                       child: Text(
@@ -182,7 +184,6 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
                       ),
                     )
                   : ListView.builder(
-                      controller: controller,
                       padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
                       itemCount: results.length,
                       itemBuilder: (BuildContext context, int index) {
@@ -197,70 +198,55 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
                             color: p.surface,
                             borderRadius: BorderRadius.circular(14),
                             clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: () => Navigator.of(context).pop(c),
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                    12, 9, 4, 9),
-                                child: Row(
-                                  children: <Widget>[
-                                    FlagAvatar(c, size: 24),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: <Widget>[
-                                          Text(
-                                            c.code,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w800,
-                                              color: p.textPrimary,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 1),
-                                          Text(
-                                            c.name,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 11.5,
-                                              color: p.textSecondary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (rate != null)
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                            left: 8),
-                                        child: Text(
-                                          Fmt.smart(rate, maxDecimals: 6),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: p.textSecondary,
-                                          ),
+                            child: ListTile(
+                              key: Key('currency-pick-${c.code}'),
+                              onTap: () => _select(c),
+                              leading: FlagAvatar(c, size: 24),
+                              title: Text(
+                                c.code,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: p.textPrimary,
+                                ),
+                              ),
+                              subtitle: Text(
+                                c.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: p.textSecondary,
+                                ),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  if (rate != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 4),
+                                      child: Text(
+                                        Fmt.smart(rate, maxDecimals: 6),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: p.textSecondary,
                                         ),
                                       ),
-                                    IconButton(
-                                      visualDensity: VisualDensity.compact,
-                                      icon: Icon(
-                                        fav
-                                            ? Icons.star_rounded
-                                            : Icons.star_outline_rounded,
-                                        size: 20,
-                                        color:
-                                            fav ? p.primary : p.textSecondary,
-                                      ),
-                                      onPressed: () =>
-                                          settings.toggleFavorite(c.code),
                                     ),
-                                  ],
-                                ),
+                                  IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    icon: Icon(
+                                      fav
+                                          ? Icons.star_rounded
+                                          : Icons.star_outline_rounded,
+                                      size: 20,
+                                      color: fav ? p.primary : p.textSecondary,
+                                    ),
+                                    onPressed: () =>
+                                        settings.toggleFavorite(c.code),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -269,8 +255,8 @@ class _CurrencyPickerState extends State<CurrencyPicker> {
                     ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 

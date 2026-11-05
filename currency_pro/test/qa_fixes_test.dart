@@ -17,6 +17,7 @@ import 'package:currency_pro/features/alerts/rate_alert_page.dart';
 import 'package:currency_pro/data/models/trip.dart';
 import 'package:currency_pro/features/travel/travel_budget_page.dart';
 import 'package:currency_pro/state/trips_provider.dart';
+import 'package:currency_pro/features/currency/converter_page.dart';
 import 'package:currency_pro/features/currency/metals_page.dart';
 import 'package:currency_pro/state/alerts_provider.dart';
 import 'package:currency_pro/features/currency/multi_currency_page.dart';
@@ -991,6 +992,63 @@ void main() {
     expect(find.textContaining('frankfurter'), findsNothing);
     expect(find.textContaining('from='), findsNothing);
     expect(find.textContaining('Exception'), findsNothing);
+  });
+
+  testWidgets('real-time converter can change USD and EUR from the picker',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final _Boot boot = await _boot();
+    final RateSnapshot snapshot = RateSnapshot(
+      base: 'USD',
+      rates: const <String, double>{
+        'USD': 1,
+        'EUR': 0.9,
+        'GBP': 0.78,
+        'PKR': 278,
+      },
+      fetchedAt: DateTime(2026, 11, 5),
+      providerUpdatedAt: DateTime(2026, 11, 5),
+    );
+    await boot.prefs.setString(PrefsService.kRateSnapshot, snapshot.encode());
+    final RatesProvider rates = _rates(boot.prefs);
+
+    await tester.pumpWidget(_app(
+      boot.settings,
+      prefs: boot.prefs,
+      rates: rates,
+      home: const ConverterPage(),
+    ));
+    await tester.pump();
+
+    expect(boot.settings.fromCode, 'USD');
+    expect(boot.settings.toCode, 'EUR');
+    expect(find.text('USD'), findsWidgets);
+    expect(find.text('EUR'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('converter-from')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'GBP');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('currency-pick-GBP')));
+    await tester.pumpAndSettle();
+
+    expect(boot.settings.fromCode, 'GBP');
+    expect(find.text('GBP'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('converter-to')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'PKR');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('currency-pick-PKR')));
+    await tester.pumpAndSettle();
+
+    expect(boot.settings.toCode, 'PKR');
+    expect(find.text('PKR'), findsWidgets);
+    expect(find.text('GBP'), findsWidgets);
   });
 }
 

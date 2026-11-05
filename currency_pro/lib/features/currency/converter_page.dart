@@ -152,12 +152,12 @@ class _ConverterPageState extends State<ConverterPage> {
 
   Future<void> _pick({required bool top}) async {
     final SettingsProvider s = _settings;
-    final L10n l10n = L10n.of(context);
+    final L10n l10n = L10n.read(context);
     final Currency? picked = await CurrencyPicker.show(
       context,
       title: top ? l10n.convertFrom : l10n.convertTo,
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     if (top) {
       await s.setPair(from: picked.code);
     } else {
@@ -372,6 +372,7 @@ class _ConverterPageState extends State<ConverterPage> {
             currency: from,
             text: topText,
             active: _editingTop,
+            pickerKey: const Key('converter-from'),
             onTapAmount: () => setState(() {
               _editingTop = true;
               _input = '0';
@@ -385,6 +386,7 @@ class _ConverterPageState extends State<ConverterPage> {
             currency: to,
             text: bottomText,
             active: !_editingTop,
+            pickerKey: const Key('converter-to'),
             onTapAmount: () => setState(() {
               _editingTop = false;
               _input = '0';
@@ -402,6 +404,7 @@ class _ConverterPageState extends State<ConverterPage> {
     required Currency currency,
     required String text,
     required bool active,
+    required Key pickerKey,
     required VoidCallback onTapAmount,
     required VoidCallback onTapCurrency,
     VoidCallback? onClear,
@@ -426,44 +429,52 @@ class _ConverterPageState extends State<ConverterPage> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Row(
         children: <Widget>[
-          InkWell(
-            onTap: onTapCurrency,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  FlagAvatar(currency, size: 24),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 96,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          currency.code,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: p.textPrimary,
-                          ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: pickerKey,
+              onTap: onTapCurrency,
+              borderRadius: BorderRadius.circular(8),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48, minWidth: 132),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      FlagAvatar(currency, size: 24),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 96,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(
+                              currency.code,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: p.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              currency.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                color: p.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          currency.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            color: p.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                      Icon(Icons.expand_more, size: 18, color: p.textSecondary),
+                    ],
                   ),
-                  Icon(Icons.expand_more, size: 18, color: p.textSecondary),
-                ],
+                ),
               ),
             ),
           ),
@@ -503,7 +514,7 @@ class _ConverterPageState extends State<ConverterPage> {
     final SettingsProvider settings = _settings;
     final Currency? picked = await CurrencyPicker.show(
       context,
-      title: L10n.of(context).favoritesTap,
+      title: L10n.read(context).favoritesTap,
       initialTab: CurrencyPickerTab.favorites,
     );
     if (picked != null) await settings.setPair(to: picked.code);
